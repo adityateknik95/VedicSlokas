@@ -1,0 +1,371 @@
+@import "tailwindcss";
+
+/* ───────────────────────── Tokens ─────────────────────────
+   Night Temple is the default. Parchment is opt-in via data-theme.
+   "accent" and "flame" are the text-safe versions of gold and saffron
+   (AA on the current background); "gold" and "saffron" are for fills,
+   strokes and glows. */
+:root {
+  /* Registered at runtime by the boot script in app/layout.tsx. */
+  --font-tiro: "Tiro Devanagari Sanskrit", "Noto Serif Devanagari", "Nirmala UI", "Kohinoor Devanagari", serif;
+}
+
+:root,
+[data-theme="night"] {
+  color-scheme: dark;
+  --bg: #0e0b1f;
+  --bg-2: #17131f;
+  --charcoal: #1c1a1d;
+  --surface: rgb(243 231 207 / 0.04);
+  --surface-2: rgb(243 231 207 / 0.07);
+  --line: rgb(201 162 75 / 0.28);
+  --ink: #f3e7cf;
+  --ink-muted: #cbbd9f;
+  --accent: #d9b45c;
+  --flame: #f0a04b;
+  --gold: #c9a24b;
+  --saffron: #e8891c;
+  --maroon: #6b1e1e;
+  --cream: #f3e7cf;
+  --on-saffron: #1a0f05;
+  --glow: rgb(232 137 28 / 0.35);
+  --manuscript: #f3e7cf;
+  --manuscript-ink: #2b1a10;
+}
+
+[data-theme="parchment"] {
+  color-scheme: light;
+  --bg: #f3e7cf;
+  --bg-2: #ead9b5;
+  --charcoal: #e4d1a8;
+  --surface: rgb(107 30 30 / 0.04);
+  --surface-2: rgb(107 30 30 / 0.07);
+  --line: rgb(122 90 20 / 0.32);
+  --ink: #26170e;
+  --ink-muted: #59432f;
+  --accent: #7a5512;
+  --flame: #8a4200;
+  --gold: #b08a35;
+  --saffron: #e8891c;
+  --maroon: #6b1e1e;
+  --cream: #f3e7cf;
+  --on-saffron: #1a0f05;
+  --glow: rgb(201 162 75 / 0.45);
+  --manuscript: #fbf3e2;
+  --manuscript-ink: #2b1a10;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-charcoal: var(--charcoal);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-flame: var(--flame);
+  --color-gold: var(--gold);
+  --color-saffron: var(--saffron);
+  --color-maroon: var(--maroon);
+  --color-cream: var(--cream);
+  --color-on-saffron: var(--on-saffron);
+  --color-manuscript: var(--manuscript);
+  --color-manuscript-ink: var(--manuscript-ink);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), ui-serif, Georgia, serif;
+  --font-deva: var(--font-tiro);
+
+  --ease-temple: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.65;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+::selection {
+  background: var(--saffron);
+  color: var(--on-saffron);
+}
+
+:focus-visible {
+  outline: 2px solid var(--flame);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ───────────────────────── Type ───────────────────────── */
+/* Devanagari: always large, crisp and generously spaced. Never smaller than ~1.5rem. */
+.deva {
+  font-family: var(--font-deva);
+  font-weight: 400;
+  line-height: 1.9;
+  letter-spacing: 0.01em;
+  word-spacing: 0.12em;
+  font-kerning: normal;
+  font-feature-settings: "kern", "liga", "clig";
+}
+
+.iast {
+  font-family: var(--font-serif);
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--flame);
+}
+
+.display {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.text-gold-sheen {
+  background: linear-gradient(100deg, var(--accent) 0%, var(--cream) 45%, var(--accent) 60%, var(--flame) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-theme="parchment"] .text-gold-sheen {
+  background: linear-gradient(100deg, var(--maroon), var(--accent) 60%, var(--flame));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* ───────────────────────── Surfaces ───────────────────────── */
+.temple-bg {
+  background:
+    radial-gradient(60rem 40rem at 50% -10%, rgb(232 137 28 / 0.12), transparent 60%),
+    radial-gradient(40rem 30rem at 100% 100%, rgb(107 30 30 / 0.25), transparent 70%),
+    var(--bg);
+}
+[data-theme="parchment"] .temple-bg {
+  background:
+    radial-gradient(60rem 40rem at 50% -10%, rgb(232 137 28 / 0.14), transparent 60%),
+    radial-gradient(40rem 30rem at 100% 100%, rgb(107 30 30 / 0.08), transparent 70%),
+    var(--bg);
+}
+
+/* Palm-leaf manuscript surface: warm paper, faint ruled fibres. */
+.manuscript {
+  background-color: var(--manuscript);
+  color: var(--manuscript-ink);
+  background-image:
+    repeating-linear-gradient(0deg, rgb(120 80 30 / 0.05) 0 1px, transparent 1px 7px),
+    radial-gradient(120% 80% at 50% 50%, transparent 55%, rgb(120 70 20 / 0.18) 100%);
+}
+
+.card {
+  position: relative;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  transition:
+    transform 0.5s var(--ease-temple),
+    box-shadow 0.5s var(--ease-temple),
+    border-color 0.5s ease;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+}
+.card:hover,
+.card:focus-within {
+  border-color: rgb(201 162 75 / 0.7);
+  box-shadow:
+    0 0 0 1px rgb(201 162 75 / 0.25),
+    0 18px 50px -20px var(--glow),
+    0 0 40px -10px var(--glow);
+}
+
+/* ───────────────────────── Reveal on scroll ─────────────────────────
+   Hidden only when JS is running (html.js), and revealed by the observer in
+   <RevealObserver>. A failsafe in the head script shows everything if the
+   observer never boots. */
+.js:not(.no-motion) [data-reveal]:not(.is-in) {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+}
+[data-reveal] {
+  transition:
+    opacity 0.9s var(--ease-temple),
+    transform 0.9s var(--ease-temple);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* Gold dividers draw themselves when revealed. */
+.draw path,
+.draw line,
+.draw circle {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.8s var(--ease-temple);
+}
+.is-in .draw path,
+.is-in .draw line,
+.is-in .draw circle,
+.draw.is-in path,
+.draw.is-in line,
+.draw.is-in circle,
+.no-motion .draw path,
+.no-motion .draw line,
+.no-motion .draw circle {
+  stroke-dashoffset: 0;
+}
+
+/* ───────────────────────── Keyframes ───────────────────────── */
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spin-rev {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+.spin-slow {
+  will-change: transform;
+  animation: spin-slow 140s linear infinite;
+}
+.spin-rev {
+  will-change: transform;
+  animation: spin-rev 200s linear infinite;
+}
+
+@keyframes flicker {
+  0%,
+  100% {
+    transform: scale(1, 1) skewX(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(0.96, 1.05) skewX(-2deg);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.03, 0.97) skewX(1.5deg);
+  }
+  75% {
+    transform: scale(0.98, 1.04) skewX(-1deg);
+    opacity: 0.95;
+  }
+}
+.flicker {
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  animation: flicker 2.6s ease-in-out infinite;
+}
+
+/* Hero Devanagari: one akṣara at a time. */
+@keyframes akshara-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.25em);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+.akshara {
+  display: inline-block;
+  opacity: 0;
+  animation: akshara-in 0.7s var(--ease-temple) forwards;
+  animation-delay: calc(var(--d, 0) * 1ms);
+}
+
+/* ───────────────────────── Reduced motion ─────────────────────────
+   Every animation collapses to a simple fade. */
+@media (prefers-reduced-motion: reduce) {
+  .spin-slow,
+  .spin-rev,
+  .flicker {
+    animation: none;
+  }
+  .js:not(.no-motion) [data-reveal]:not(.is-in) {
+    transform: none;
+  }
+  [data-reveal] {
+    transition: opacity 0.6s ease;
+    transition-delay: 0ms;
+  }
+  .draw path,
+  .draw line,
+  .draw circle {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+  .akshara {
+    animation: fade-in 0.8s ease forwards;
+    animation-delay: 0ms;
+  }
+  .card {
+    transform: none !important;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Utility: hide scrollbars on horizontal chip rows. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+[data-theme="parchment"] .manuscript {
+  box-shadow:
+    0 0 0 1px rgb(122 90 20 / 0.28),
+    0 30px 60px -30px rgb(80 50 10 / 0.4);
+}
+
+/* Below-the-fold sections: the browser skips their layout and paint until they
+   approach the viewport (big win on phones for long pages). */
+.defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
