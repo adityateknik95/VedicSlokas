@@ -37,7 +37,7 @@ Listen button says "Recitation coming soon".
 app/                 routes: home, library, sloka/[slug] (+ per-sloka OG image), about, sitemap, robots
 components/motifs    inline-SVG motifs: mandala, lotus, pillar, palm-leaf edge, diya, Om, gold divider
 components/motion    MotionProvider (Lenis + GSAP, reveal observer, reduced-motion), cursor glow
-components/home      hero, sloka of the day, pillars, carousel, embers, count-up
+components/home      hero, sloka of the day, pillars, embers, count-up
 components/library   search/filter browser, sloka card
 components/sloka     audio, copy/share, Instagram-story card export
 lib/                 data access + search normalisation, favorites store, fonts/idle helpers
@@ -52,7 +52,7 @@ scripts/             build-motifs.mjs: regenerates public/motifs/*.svg (`npm run
 - **Mandalas** are drawn with `<svg><use href="/motifs/…#m">`: cached once, themeable via
   `currentColor`, no DOM bloat, and never an LCP image.
 - **Animation code is lazy.** Lenis + GSAP load on the first scroll/touch/key; embers start when
-  the page is idle; the 3D carousel loads when it nears the viewport; Framer Motion's engine
+  the page is idle; Framer Motion's engine
   loads asynchronously. Below-the-fold sections use `content-visibility: auto`.
 - **Reduced motion.** With `prefers-reduced-motion`, every animation becomes a simple fade and
   Lenis/GSAP/embers/cursor glow are never loaded.

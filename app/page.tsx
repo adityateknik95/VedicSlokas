@@ -3,9 +3,9 @@ import { Hero } from "@/components/home/Hero";
 import { SlokaOfTheDay } from "@/components/home/SlokaOfTheDay";
 import { Pillars, type PillarData } from "@/components/home/Pillars";
 import { CountUp } from "@/components/home/CountUp";
-import { CarouselLazy } from "@/components/home/CarouselLazy";
+import { SlokaCard } from "@/components/library/SlokaCard";
 import { GoldDivider, Lotus, Mandala, Om } from "@/components/motifs";
-import { Container, SectionHeading } from "@/components/ui";
+import { ButtonLink, Container, SectionHeading } from "@/components/ui";
 import { Tilt } from "@/components/ui/Tilt";
 import { SOURCES, THEMES, deities, getFeatured, getSloka, getSlokaOfTheDay, slokas, sourceInfo, themeInfo } from "@/lib/slokas";
 
@@ -27,13 +27,7 @@ export default function HomePage() {
     };
   });
 
-  const carouselItems = getFeatured().map((s) => ({
-    slug: s.slug,
-    title: s.title,
-    line: s.devanagari.split("\n")[0].replace(/[।॥]/g, "").trim(),
-    citation: s.reference.citation,
-    essence: s.essence,
-  }));
+  const featured = getFeatured().slice(0, 6);
 
   const stats = [
     { value: slokas.length, suffix: "", label: "Slokas, each with an exact source" },
@@ -143,14 +137,23 @@ export default function HomePage() {
 
       <GoldDivider />
 
-      {/* Carousel */}
-      <section aria-labelledby="carousel-title" className="defer-render relative overflow-hidden py-20 sm:py-28">
+      {/* Featured slokas */}
+      <section aria-labelledby="featured-title" className="defer-render relative py-20 sm:py-28">
         <Container>
-          <SectionHeading id="carousel-title" eyebrow="The wheel of verses" title="Turn the wheel" lede="Our most-loved slokas, arranged like lamps around a sanctum. Drag to turn; tap the one in front to open it." />
+          <SectionHeading id="featured-title" eyebrow="Most loved" title="Begin with these" lede="A handful of the best-known slokas. Tap any card to read it word by word." />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            {featured.map((s, i) => (
+              <li key={s.slug}>
+                <SlokaCard sloka={s} index={i} />
+              </li>
+            ))}
+          </ul>
+          <div data-reveal className="mt-10 text-center">
+            <ButtonLink href="/library" variant="ghost">
+              See all {slokas.length} slokas <span aria-hidden="true">→</span>
+            </ButtonLink>
+          </div>
         </Container>
-        <div data-reveal>
-          <CarouselLazy items={carouselItems} />
-        </div>
       </section>
     </>
   );
