@@ -17,10 +17,10 @@ export function Hero({ sloka }: { sloka: Sloka }) {
       </div>
 
       {/* Temple pillars framing the stage on larger screens. */}
-      <div aria-hidden="true" data-parallax="0.15" className="pointer-events-none absolute inset-y-24 left-4 hidden w-8 text-gold opacity-40 lg:block xl:left-10">
+      <div aria-hidden="true" data-parallax="0.15" className="pointer-events-none absolute inset-y-24 left-4 hidden w-8 text-gold opacity-90 [filter:drop-shadow(0_0_6px_rgb(232_137_28/0.5))] lg:block xl:left-10">
         <PillarBorder className="h-full w-full" />
       </div>
-      <div aria-hidden="true" data-parallax="0.15" className="pointer-events-none absolute inset-y-24 right-4 hidden w-8 text-gold opacity-40 lg:block xl:right-10">
+      <div aria-hidden="true" data-parallax="0.15" className="pointer-events-none absolute inset-y-24 right-4 hidden w-8 text-gold opacity-90 [filter:drop-shadow(0_0_6px_rgb(232_137_28/0.5))] lg:block xl:right-10">
         <PillarBorder className="h-full w-full" />
       </div>
 

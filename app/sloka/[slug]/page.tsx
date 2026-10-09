@@ -94,8 +94,8 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
           </div>
 
           <div className="relative mx-auto mt-12 max-w-4xl">
-            <PillarBorder className="absolute -left-2 top-0 hidden h-full w-7 text-gold opacity-50 md:block" />
-            <PillarBorder className="absolute -right-2 top-0 hidden h-full w-7 text-gold opacity-50 md:block" />
+            <PillarBorder className="absolute -left-2 top-0 hidden h-full w-7 text-gold opacity-90 [filter:drop-shadow(0_0_6px_rgb(232_137_28/0.5))] md:block" />
+            <PillarBorder className="absolute -right-2 top-0 hidden h-full w-7 text-gold opacity-90 [filter:drop-shadow(0_0_6px_rgb(232_137_28/0.5))] md:block" />
             <div className="px-0 py-4 text-center md:px-14">
               <p className="deva text-[1.85rem] leading-[1.9] text-ink [overflow-wrap:anywhere] sm:text-5xl sm:leading-[1.85]" lang="sa">
                 {s.devanagari.split("\n").map((l, i) => (

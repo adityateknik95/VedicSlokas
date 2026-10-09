@@ -73,7 +73,7 @@ export function Om({ className, title }: SvgProps & { title?: string }) {
 /** Vertical temple pillar: capital, fluted shaft, base. Stretches to its container's height. */
 export function PillarBorder({ className }: SvgProps) {
   return (
-    <svg viewBox="0 0 40 400" preserveAspectRatio="none" className={className} aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1">
+    <svg viewBox="0 0 40 400" preserveAspectRatio="none" className={className} aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="1.6">
       <path d="M2 4 H38 M6 10 H34 M4 16 H36" vectorEffect="non-scaling-stroke" />
       <path d="M10 16 C10 24 30 24 30 16" vectorEffect="non-scaling-stroke" />
       <path d="M12 24 V376 M20 24 V376 M28 24 V376" vectorEffect="non-scaling-stroke" opacity="0.7" />
