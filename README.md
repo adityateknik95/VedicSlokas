@@ -36,7 +36,7 @@ Listen button says "Recitation coming soon".
 ```
 app/                 routes: home, library, sloka/[slug] (+ per-sloka OG image), about, sitemap, robots
 components/motifs    inline-SVG motifs: mandala, lotus, pillar, palm-leaf edge, diya, Om, gold divider
-components/motion    MotionProvider (Lenis + GSAP, reveal observer, reduced-motion), cursor glow
+components/motion    MotionProvider (Lenis + GSAP, reveal observer, reduced-motion)
 components/home      hero, sloka of the day, pillars, embers, count-up
 components/library   search/filter browser, sloka card
 components/sloka     audio, copy/share, Instagram-story card export
@@ -55,7 +55,7 @@ scripts/             build-motifs.mjs: regenerates public/motifs/*.svg (`npm run
   the page is idle; Framer Motion's engine
   loads asynchronously. Below-the-fold sections use `content-visibility: auto`.
 - **Reduced motion.** With `prefers-reduced-motion`, every animation becomes a simple fade and
-  Lenis/GSAP/embers/cursor glow are never loaded.
+  Lenis/GSAP/embers are never loaded.
 
 Lighthouse (local production build, quiet machine): mobile Performance 91–95,
 desktop 100; Accessibility, Best Practices and SEO 100 on every page.
