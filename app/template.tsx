@@ -31,7 +31,7 @@ export default function Template({ children }: { children: ReactNode }) {
         </m.div>
       ) : (
         <>
-          <m.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: unroll, delay: 0.25 }}>
+          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: unroll }}>
             {children}
           </m.div>
           {/* Manuscript sheet that rolls away top-to-bottom, with a gold roller on its edge. */}
@@ -40,7 +40,7 @@ export default function Template({ children }: { children: ReactNode }) {
             className="manuscript pointer-events-none fixed inset-0 z-40"
             initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
             animate={{ clipPath: "inset(100% 0% 0% 0%)" }}
-            transition={{ duration: 0.9, ease: unroll }}
+            transition={{ duration: 0.5, ease: unroll }}
           />
           <m.div
             aria-hidden="true"
@@ -51,7 +51,7 @@ export default function Template({ children }: { children: ReactNode }) {
             }}
             initial={{ y: "0vh", opacity: 1 }}
             animate={{ y: "100vh", opacity: [1, 1, 0] }}
-            transition={{ duration: 0.9, ease: unroll }}
+            transition={{ duration: 0.5, ease: unroll }}
           />
         </>
       )}
