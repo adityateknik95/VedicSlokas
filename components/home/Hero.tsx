@@ -66,15 +66,6 @@ export function Hero({ sloka }: { sloka: Sloka }) {
           </ButtonLink>
         </div>
       </div>
-
-      <a
-        href="#sloka-of-the-day"
-        aria-label="Scroll to the sloka of the day"
-        className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-[0.65rem] uppercase tracking-[0.3em] text-ink-muted sm:flex"
-      >
-        Scroll
-        <span aria-hidden="true" className="h-10 w-px bg-gradient-to-b from-gold to-transparent" />
-      </a>
     </section>
   );
 }
