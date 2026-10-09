@@ -67,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
       </head>
-      <body className="min-h-dvh">
+      <body className="min-h-dvh pb-24 md:pb-0">
         <MotionProvider>
           <Header slugs={slokas.map((s) => s.slug)} />
           <main id="main" tabIndex={-1} className="outline-none">
