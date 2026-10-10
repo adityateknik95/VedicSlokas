@@ -369,3 +369,45 @@ html.lenis body {
   content-visibility: auto;
   contain-intrinsic-size: auto 900px;
 }
+
+/* Lamp-lit card: warm glow from the top over deep plum, bright gold edge.
+   Fixed colours (not themed) so these cards glow the same in both themes.
+   Used by the home carousel and the sloka cards in the Library. */
+.lamp-card {
+  --lamp-ink: #fbf1dc;
+  --lamp-muted: #e6d6b4;
+  --lamp-gold: #f4cf74;
+  --lamp-flame: #f5ad5c;
+  color: var(--lamp-ink);
+  border-color: rgb(201 162 75 / 0.7) !important;
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgb(232 137 28 / 0.34), transparent 62%),
+    radial-gradient(90% 60% at 50% 110%, rgb(201 162 75 / 0.18), transparent 70%),
+    linear-gradient(180deg, #34223f 0%, #221631 55%, #1b1228 100%) !important;
+  box-shadow: 0 18px 50px -24px rgb(232 137 28 / 0.45);
+}
+.lamp-card:hover,
+.lamp-card:focus-within {
+  border-color: rgb(240 192 100 / 0.95) !important;
+  box-shadow:
+    0 0 0 1px rgb(232 137 28 / 0.5),
+    0 20px 60px -15px rgb(232 137 28 / 0.65),
+    0 0 50px -10px rgb(232 137 28 / 0.45);
+}
+.lamp-card .lamp-deva {
+  color: var(--lamp-gold);
+  text-shadow: 0 0 18px rgb(232 137 28 / 0.45);
+}
+.lamp-card button[aria-pressed="false"] {
+  border-color: rgb(226 191 106 / 0.5);
+  color: var(--lamp-muted);
+}
+.lamp-card button[aria-pressed="false"]:hover {
+  border-color: var(--lamp-gold);
+  color: var(--lamp-gold);
+}
+.lamp-card button[aria-pressed="true"] {
+  border-color: var(--saffron);
+  background: rgb(232 137 28 / 0.2);
+  color: var(--lamp-flame);
+}
