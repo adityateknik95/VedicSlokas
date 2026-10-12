@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Quality levels used by the temple carousel (crisp photo, cheap blurred backdrop).
+  images: { qualities: [40, 75, 90] },
   // Pin the workspace root so a stray lockfile higher up the tree is ignored.
   turbopack: { root: process.cwd() },
   async headers() {

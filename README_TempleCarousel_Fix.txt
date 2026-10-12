@@ -14,3 +14,11 @@ Run locally:
 5. Open http://localhost:3000
 
 Note: Upscaling improves display dimensions but cannot add photographic detail that was not present in the original images. For the best true-HD result, replace these supplied photos with original high-resolution temple photographs.
+
+Follow-up (merged into the main project):
+- The carousel now uses the upscaled /temples/padmavathi.jpg; the unused padmavathi.jpeg was removed.
+- Photos are shown whole at close to their natural size over a blurred fill, instead of being
+  stretched across the wide frame (which doubled their size and cropped them).
+- Auto-advance is off for visitors who prefer reduced motion, pauses on hover, keyboard focus,
+  touch, when scrolled off-screen or in a background tab, and has a pause/play button.
+- Images load lazily so they never slow down the first screen.
