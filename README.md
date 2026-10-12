@@ -28,6 +28,14 @@ Things to look at when verifying:
 - **Śiva Tāṇḍava Stotram** has small spelling variants across printed editions.
 - Translations and word glosses are original and should be reviewed too.
 
+Translations: the **Translate** page (`/translate?sloka=<slug>&lang=kn|hi|ta|te|ml|en`) shows
+the sloka in that language's script and its meaning in that language.
+- The script versions are generated in code from the Devanagari ([`lib/transliterate.ts`](lib/transliterate.ts)), so they're exact.
+  Tamil marks sounds it has no letter for with superscripts (க² kha, க³ ga, க⁴ gha).
+- The meanings in Hindi, Kannada, Tamil, Telugu and Malayalam live in
+  [`data/translations.json`](data/translations.json). They were AI-drafted from the English and are
+  marked `"verified": false`; have a fluent reader check each language before launch.
+
 Audio: each entry points to `/audio/<slug>.mp3`. Drop files into `public/audio/`; until then the
 Listen button says "Recitation coming soon".
 

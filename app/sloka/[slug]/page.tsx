@@ -120,6 +120,14 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
             <FavoriteButton slug={s.slug} title={s.title} />
             <ShareActions title={s.title} text={copyText} path={`/sloka/${s.slug}`} />
           </div>
+          <p className="mt-6 text-center">
+            <Link
+              href={`/translate?sloka=${s.slug}&lang=kn`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              Read it in ಕನ್ನಡ · हिन्दी · தமிழ் · తెలుగు · മലയാളം <span aria-hidden="true">→</span>
+            </Link>
+          </p>
         </Container>
       </header>
 

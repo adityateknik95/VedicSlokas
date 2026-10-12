@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useFavorites } from "@/lib/favorites";
 import { SurpriseButton } from "./SurpriseButton";
 
-type NavKey = "home" | "library" | "favorites" | "about";
+type NavKey = "home" | "library" | "favorites" | "translate" | "about";
 
 const icon = "h-[18px] w-[18px] shrink-0";
 const ICONS: Record<NavKey, ReactNode> = {
@@ -37,6 +37,13 @@ const ICONS: Record<NavKey, ReactNode> = {
       <path d="M5 19c4 2 10 2 14 0" />
     </svg>
   ),
+  // Translate: a script letter becoming a Latin "A"
+  translate: (
+    <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
+      <path d="M3 5.5h9M7.5 3.5v2M5 5.5c.9 3.2 3.2 5.8 6.5 7.5M10 5.5c-.9 3.2-3.2 5.8-6.5 7.5" />
+      <path d="M12.5 21l4.25-9.5L21 21M14 17.5h5.5" />
+    </svg>
+  ),
   // Diya
   about: (
     <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
@@ -51,12 +58,14 @@ const NAV: { key: NavKey; href: string; label: string }[] = [
   { key: "home", href: "/", label: "Home" },
   { key: "library", href: "/library", label: "Library" },
   { key: "favorites", href: "/library?favorites=1", label: "Favorites" },
+  { key: "translate", href: "/translate", label: "Translate" },
   { key: "about", href: "/about", label: "About" },
 ];
 
 function activeKey(pathname: string, favorites: boolean): NavKey | null {
   if (pathname === "/") return "home";
   if (pathname.startsWith("/library")) return favorites ? "favorites" : "library";
+  if (pathname.startsWith("/translate")) return "translate";
   if (pathname.startsWith("/about")) return "about";
   return null;
 }
@@ -112,7 +121,7 @@ function DesktopNav({ active }: NavProps) {
 function MobileDock({ active }: NavProps) {
   const { favorites } = useFavorites();
   return (
-    <ul className="grid grid-cols-4 gap-1 rounded-[1.6rem] border border-gold/30 bg-bg-2/85 p-1.5 shadow-[0_-8px_40px_-12px_rgb(0_0_0/0.5),0_0_30px_-14px_var(--glow)] backdrop-blur-lg">
+    <ul className="grid grid-cols-5 gap-0.5 rounded-[1.6rem] border border-gold/30 bg-bg-2/85 p-1.5 shadow-[0_-8px_40px_-12px_rgb(0_0_0/0.5),0_0_30px_-14px_var(--glow)] backdrop-blur-lg">
       {NAV.map((item) => {
         const on = active === item.key;
         return (
@@ -120,7 +129,7 @@ function MobileDock({ active }: NavProps) {
             <Link
               href={item.href}
               aria-current={on ? "page" : undefined}
-              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[1.2rem] text-[0.7rem] font-medium tracking-wide transition-colors ${
+              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[1.2rem] text-[0.64rem] font-medium tracking-wide transition-colors ${
                 on ? "bg-gradient-to-b from-saffron/25 to-gold/10 text-accent shadow-[inset_0_0_0_1px_rgb(201_162_75/0.4)]" : "text-ink-muted active:bg-surface-2"
               }`}
             >

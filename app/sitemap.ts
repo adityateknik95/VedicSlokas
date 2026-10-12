@@ -3,7 +3,7 @@ import { slokas } from "@/lib/slokas";
 import { site } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ["", "/library", "/about"].map((p) => ({
+  const pages = ["", "/library", "/translate", "/about"].map((p) => ({
     url: `${site.url}${p}`,
     changeFrequency: "weekly" as const,
     priority: p === "" ? 1 : 0.8,

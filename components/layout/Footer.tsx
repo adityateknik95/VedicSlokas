@@ -33,6 +33,7 @@ export function Footer() {
             <li><Link className={linkCls} href="/library">Library</Link></li>
             <li><Link className={linkCls} href="/#sloka-of-the-day">Sloka of the Day</Link></li>
             <li><Link className={linkCls} href="/library?favorites=1">Your favorites</Link></li>
+            <li><Link className={linkCls} href="/translate">Translate</Link></li>
             <li><Link className={linkCls} href="/about">About</Link></li>
           </ul>
         </nav>

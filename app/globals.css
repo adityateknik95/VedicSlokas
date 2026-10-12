@@ -411,3 +411,13 @@ html.lenis body {
   background: rgb(232 137 28 / 0.2);
   color: var(--lamp-flame);
 }
+
+/* South Indian scripts on the Translate page: system/Noto faces (every phone ships
+   them), so no extra font download. Generous line-height for stacked vowel signs. */
+.indic {
+  font-family:
+    "Noto Sans Kannada", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam", "Nirmala UI",
+    "Kannada Sangam MN", "Tamil Sangam MN", "Telugu Sangam MN", "Malayalam Sangam MN", var(--font-inter), sans-serif;
+  line-height: 1.9;
+  word-spacing: 0.08em;
+}
