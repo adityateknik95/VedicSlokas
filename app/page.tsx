@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Hero } from "@/components/home/Hero";
+import { TempleCarousel } from "@/components/home/TempleCarousel";
 import { SlokaOfTheDay } from "@/components/home/SlokaOfTheDay";
 import { Pillars, type PillarData } from "@/components/home/Pillars";
 import { CountUp } from "@/components/home/CountUp";
@@ -45,6 +46,8 @@ export default function HomePage() {
   return (
     <>
       <Hero sloka={heroSloka} />
+
+      <TempleCarousel />
 
       <SlokaOfTheDay sloka={today} />
 
