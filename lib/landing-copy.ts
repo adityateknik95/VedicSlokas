@@ -15,11 +15,14 @@ export const META = {
 };
 
 export const HERO = {
-  eyebrow: "Sanskrit for a new generation",
+  eyebrow: "Sanskrit slokas, word by word.",
   titleLead: "From the universe,",
   titleTail: "to",
   titleEmphasis: "you.",
   lede: "The oldest words humanity has, still asking who you are. Read one. Sit with it. Carry it into your day.",
+  /** Bṛhadāraṇyaka Upaniṣad 1.3.28, the first two lines of the Pavamāna mantra in data/slokas.json. */
+  verseDevanagari: "असतो मा सद्गमय । तमसो मा ज्योतिर्गमय ॥",
+  verseIast: "asato mā sad gamaya · tamaso mā jyotir gamaya",
   primary: "Begin your journey",
   primarySignedIn: "Go to your dashboard",
   secondary: "Explore slokas",

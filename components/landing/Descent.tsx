@@ -1,4 +1,3 @@
-import { Eyebrow } from "@/components/ui";
 import { DESCENT_COPY, type DescentScene } from "@/lib/landing-copy";
 import { DESCENT } from "@/lib/motion-tokens";
 import { DescentMotion } from "./DescentMotion";
@@ -32,27 +31,13 @@ export function Descent() {
       className="descent cosmos cosmos-framed grain overflow-clip"
       style={{ ["--descent-track" as string]: `${DESCENT.trackSvh}svh` }}
     >
-      {/* The threshold: the heading, in a short band of night where the real Milky Way (a strip
-          of the same ESO panorama the dive opens on) thickens, and the hero's falling line
-          carries on down to the hard edge where the descent begins. */}
-      <header className="descent-threshold">
-        <div aria-hidden="true" className="threshold-stars" />
-        <div className="relative z-[2] px-5 text-center">
-          <div data-reveal className="flex justify-center">
-            <Eyebrow>{DESCENT_COPY.eyebrow}</Eyebrow>
-          </div>
-          <h2 id="descent-title" data-reveal style={{ ["--i" as string]: 1 }} className="display mx-auto mt-4 max-w-3xl text-4xl text-ink sm:text-5xl md:text-6xl">
-            {DESCENT_COPY.title}
-          </h2>
-        </div>
-        <div aria-hidden="true" className="threshold-line">
-          <span className="cue-fall threshold-spark" />
-        </div>
-      </header>
+      {/* Named for assistive tech; visually the dive speaks for itself. */}
+      <h2 id="descent-title" className="sr-only">
+        {DESCENT_COPY.title}
+      </h2>
 
       <div className="descent-track">
         <div className="descent-stage">
-
           <ol className="descent-scenes relative z-[2] px-5">
             {scenes.map((scene) => (
               <li key={scene.key} className="descent-scene">

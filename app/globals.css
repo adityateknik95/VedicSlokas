@@ -515,6 +515,51 @@ html.lenis body {
   --dur-enter: 0.9s;
   --dur-enter-short: 0.7s;
   --stagger: 60ms;
+  /* Height of the fixed header bar (components/layout/Header.tsx uses it too). */
+  --nav-h: 4rem;
+}
+@media (min-width: 640px) {
+  :root {
+    --nav-h: 4.75rem;
+  }
+}
+
+/* The hero's content sits in the space below the fixed header, centred there, with room
+   kept at the bottom for the scroll cue (and, below md, the bottom tab bar). */
+.hero-space {
+  min-height: 100vh; /* fallback */
+  min-height: 100svh; /* the small viewport: never taller than the screen with browser UI showing */
+  padding-top: calc(var(--nav-h) + 1.5rem);
+  padding-bottom: calc(10.5rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  .hero-space {
+    padding-bottom: 7rem;
+  }
+}
+/* The hero's bottom edge eases into --color-cosmos-0, the exact colour the descent's
+   heading band starts on (both use the token), so there is no seam at any scroll position. */
+.hero-fade {
+  height: 8%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-cosmos-0) 0%, transparent) 0%,
+    color-mix(in srgb, var(--color-cosmos-0) 30%, transparent) 40%,
+    color-mix(in srgb, var(--color-cosmos-0) 75%, transparent) 75%,
+    var(--color-cosmos-0) 100%
+  );
+}
+/* The hero's mandala is sized to the hero, so the whole circle always shows: no wider
+   than the screen, no taller than the space the hero gives it. */
+.hero-mandala {
+  width: min(70rem, 100vw, 84vh); /* fallback */
+  width: min(70rem, 100vw, 84svh); /* ends just above the bottom fade */
+}
+/* The headline never grows past 6.5rem, so two lines always fit under the header.
+   (Two classes, so it wins over .display-xl, which is declared further down.) */
+.display-xl.hero-title {
+  font-size: clamp(3rem, 8vw, 6.5rem);
 }
 
 /* Visitor pressed "Pause motion": every ambient loop holds still. */
@@ -559,14 +604,12 @@ html.motion-paused *::after {
 /* In the light theme the night hero starts below the header, so the header's dark ink
    always sits on parchment (it is transparent until the page scrolls). */
 [data-theme="parchment"] .hero-framed {
-  margin-top: 4.5rem;
-  min-height: calc(100svh - 5rem);
+  margin-top: calc(var(--nav-h) + 0.5rem);
+  min-height: calc(100vh - var(--nav-h) - 1rem); /* fallback */
+  min-height: calc(100svh - var(--nav-h) - 1rem);
 }
-@media (min-width: 640px) {
-  [data-theme="parchment"] .hero-framed {
-    margin-top: 5.25rem;
-    min-height: calc(100svh - 5.75rem);
-  }
+[data-theme="parchment"] .hero-framed.hero-space {
+  padding-top: 2rem;
 }
 
 /* Fine film grain over the night (static SVG noise, no animation). */
@@ -751,45 +794,6 @@ html.motion-paused *::after {
 }
 .descent.is-ready .descent-loading {
   opacity: 0;
-}
-
-/* The threshold at the top of the descent: the heading in a band of night that deepens
-   toward the black of the dive, real stars thickening toward the bottom, and the hero's
-   falling line carried down to the hard edge where the descent begins. */
-.descent-threshold {
-  position: relative;
-  overflow: hidden;
-  padding-top: clamp(4rem, 11svh, 7rem);
-  padding-bottom: clamp(6rem, 18svh, 11rem);
-  background:
-    radial-gradient(42rem 9rem at 50% 100%, rgb(110 80 170 / 0.16), transparent 70%),
-    linear-gradient(to bottom, #04030c 0%, #030209 55%, #000 100%);
-}
-.threshold-stars {
-  position: absolute;
-  inset: 0;
-  background: url("/descent/threshold_sky.webp") center bottom / cover no-repeat;
-  /* Eased fade: nothing behind the heading, the full star field at the edge. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 35%, rgb(0 0 0 / 0.25) 60%, rgb(0 0 0 / 0.75) 85%, #000 100%);
-  mask-image: linear-gradient(to bottom, transparent 0%, transparent 35%, rgb(0 0 0 / 0.25) 60%, rgb(0 0 0 / 0.75) 85%, #000 100%);
-  opacity: 0.85;
-}
-.threshold-line {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  z-index: 1;
-  width: 1px;
-  height: clamp(4rem, 13svh, 8rem);
-  overflow: hidden;
-  background: linear-gradient(to bottom, rgb(201 162 75 / 0.45), rgb(201 162 75 / 0.12) 75%, transparent);
-}
-.threshold-spark {
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 35%;
-  background: linear-gradient(to bottom, transparent, var(--color-flame, #f5ad5c), transparent);
 }
 
 /* Live layers (built by descent-3d.ts): the WebGL canvas, the photos, a soft vignette. */

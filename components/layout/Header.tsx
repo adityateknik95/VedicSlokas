@@ -188,7 +188,7 @@ export function Header({ slugs }: { slugs: string[] }) {
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-saffron focus:px-4 focus:py-2 focus:text-on-saffron">
           Skip to content
         </a>
-        <div className="mx-auto grid h-16 max-w-[88rem] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:h-[4.75rem] sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
+        <div className="mx-auto grid h-[var(--nav-h)] max-w-[88rem] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
           <Link href="/" className="flex min-h-11 items-center gap-2.5 justify-self-start rounded-full" aria-label="VedicSlokas home">
             <Diya className="h-9 w-9" />
             <span className="display text-2xl tracking-wide text-ink">

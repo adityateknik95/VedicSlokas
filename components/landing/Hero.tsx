@@ -13,26 +13,32 @@ import { HeroSky, MotionToggle } from "./HeroClient";
 export function Hero() {
   const words = HERO.titleLead.split(" ");
   return (
-    <section aria-labelledby="hero-title" className="hero-framed cosmos cosmos-framed grain relative flex min-h-[100svh] items-center overflow-hidden pb-40 pt-28 sm:pt-32 md:pb-24">
+    <section aria-labelledby="hero-title" className="hero-framed hero-space cosmos cosmos-framed grain relative flex items-center overflow-hidden">
       <HeroSky />
 
       {/* Distant galaxy: a slow mandala with a warm core. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-0 grid place-items-center">
-        <div className="relative aspect-square w-[150vw] max-w-[70rem] sm:w-[105vw]">
+        <div className="hero-mandala relative aspect-square">
           <div className="breathe absolute inset-[30%] rounded-full bg-[radial-gradient(circle,rgb(255_190_120/0.28),rgb(140_70_200/0.12)_45%,transparent_70%)] blur-2xl" />
           <Mandala className="spin-slow absolute inset-0 h-full w-full text-gold opacity-[0.2]" />
           <Mandala variant="simple" className="spin-rev absolute inset-[24%] h-[52%] w-[52%] text-teal-300/40 opacity-60" />
         </div>
         {/* Scrim keeps text above 4.5:1 however bright the sky gets. */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgb(4_3_12/0.55),rgb(4_3_12/0.15)_55%,rgb(4_3_12/0.7))]" />
+        {/* Sinks the sky, glows and mandala into the night colour the next section starts on,
+            so no edge shows as the descent scrolls into view. */}
+        <div className="hero-fade absolute inset-x-0 bottom-0" />
       </div>
 
       <div className="relative z-[2] mx-auto w-full max-w-5xl px-5 text-center sm:px-8">
+        {/* Says what the site is, before anything else. Same entrance as the headline. */}
         <div className="flex justify-center">
-          <Eyebrow>{HERO.eyebrow}</Eyebrow>
+          <div className="word-settle" style={{ ["--i" as string]: 0 }}>
+            <Eyebrow>{HERO.eyebrow}</Eyebrow>
+          </div>
         </div>
 
-        <h1 id="hero-title" className="display-xl mt-6 text-ink">
+        <h1 id="hero-title" className="display-xl hero-title mt-5 text-ink sm:mt-6">
           <span className="block">
             {words.map((word, i) => (
               <span key={word} className="word-settle" style={{ ["--i" as string]: i }}>
@@ -51,11 +57,23 @@ export function Hero() {
           </span>
         </h1>
 
-        <p className="rise-in mx-auto mt-7 max-w-xl text-base leading-relaxed text-ink-muted sm:text-lg" style={{ ["--i" as string]: 3 }}>
+        <p className="rise-in mx-auto mt-6 max-w-xl text-base leading-relaxed text-ink-muted sm:mt-7 sm:text-lg" style={{ ["--i" as string]: 3 }}>
           {HERO.lede}
         </p>
 
-        <div className="rise-in mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row" style={{ ["--i" as string]: 5 }}>
+        {/* A real verse, kept quiet. Read once: the transliteration is visual only. */}
+        <div className="mt-5 opacity-45 sm:mt-6">
+          <span className="word-settle" style={{ ["--i" as string]: 4 }}>
+            <span lang="sa" className="deva block text-lg leading-snug text-ink sm:text-xl">
+              {HERO.verseDevanagari}
+            </span>
+            <span aria-hidden="true" className="iast mt-1 block text-xs tracking-wide text-ink-muted sm:text-sm">
+              {HERO.verseIast}
+            </span>
+          </span>
+        </div>
+
+        <div className="rise-in mt-8 flex sm:mt-10 flex-col items-center justify-center gap-3 sm:flex-row" style={{ ["--i" as string]: 5 }}>
           <AuthAwareCta
             guest={{ href: "/signup", label: HERO.primary }}
             member={{ href: "/dashboard", label: HERO.primarySignedIn }}
