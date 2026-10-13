@@ -1,0 +1,9 @@
+# Local only: never upload these with `vercel deploy` (mirrors .gitignore for the CLI).
+.env*
+.claude
+.pglite-*
+.dev-outbox
+test-results
+playwright-report
+*.zip
+standalone
