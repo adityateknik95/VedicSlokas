@@ -6,10 +6,11 @@ import { useRef, type ComponentProps } from "react";
  * A .card that tilts a few degrees toward the pointer. Only reacts to mouse/pen
  * (never touch), and CSS disables the transform under prefers-reduced-motion.
  */
-export function Tilt({ className = "", children, max = 5, ...rest }: ComponentProps<"div"> & { max?: number }) {
+export function Tilt({ className = "", children, max = 5, onPointerMove, onPointerLeave, ...rest }: ComponentProps<"div"> & { max?: number }) {
   const ref = useRef<HTMLDivElement>(null);
 
   const onMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    onPointerMove?.(e);
     if (e.pointerType === "touch") return;
     const el = ref.current!;
     const r = el.getBoundingClientRect();
@@ -18,7 +19,8 @@ export function Tilt({ className = "", children, max = 5, ...rest }: ComponentPr
     el.style.setProperty("--ry", `${(px * max * 2).toFixed(2)}deg`);
     el.style.setProperty("--rx", `${(-py * max * 2).toFixed(2)}deg`);
   };
-  const reset = () => {
+  const reset = (e: React.PointerEvent<HTMLDivElement>) => {
+    onPointerLeave?.(e);
     ref.current?.style.setProperty("--rx", "0deg");
     ref.current?.style.setProperty("--ry", "0deg");
   };

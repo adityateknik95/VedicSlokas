@@ -7,7 +7,7 @@ type Props = { slug: string; title: string; size?: "sm" | "md"; className?: stri
 export function FavoriteButton({ slug, title, size = "md", className = "" }: Props) {
   const { has, toggle } = useFavorites();
   const on = has(slug);
-  const dim = size === "sm" ? "h-10 w-10" : "h-12 w-12";
+  const dim = size === "sm" ? "h-11 w-11" : "h-12 w-12";
   return (
     <button
       type="button"

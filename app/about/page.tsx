@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TempleCarousel } from "@/components/about/TempleCarousel";
 import { Diya, GoldDivider, Mandala, Om } from "@/components/motifs";
 import { ButtonLink, Container, Eyebrow, SectionHeading } from "@/components/ui";
 
@@ -53,6 +54,8 @@ export default function AboutPage() {
           />
         </Container>
       </section>
+
+      <TempleCarousel />
 
       <section aria-labelledby="principles-title" className="py-16 sm:py-24">
         <Container>

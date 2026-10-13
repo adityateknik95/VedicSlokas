@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Diya, Mandala } from "@/components/motifs";
 import { SOURCES, THEMES, themeInfo, slokas } from "@/lib/slokas";
 
-const linkCls = "inline-flex min-h-9 items-center text-ink-muted transition-colors hover:text-accent";
+const linkCls = "inline-flex min-h-11 items-center text-ink-muted transition-colors hover:text-accent";
 
 export function Footer() {
   const pending = slokas.filter((s) => !s.verified).length;
@@ -12,7 +12,7 @@ export function Footer() {
 
       <div className="relative mx-auto grid max-w-6xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-12">
         <div className="md:col-span-4">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="VedicSlokas home">
+          <Link href="/" className="flex min-h-11 items-center gap-2.5" aria-label="VedicSlokas home">
             <Diya className="h-10 w-10" />
             <span className="display text-3xl text-ink">
               Vedic<span className="text-accent">Slokas</span>
@@ -74,7 +74,7 @@ export function Footer() {
       <div className="relative border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-5 py-6 text-xs text-ink-muted sm:flex-row sm:items-center sm:px-8">
           <p>© {new Date().getFullYear()} VedicSlokas. Verses are in the public domain; translations are our own.</p>
-          <a href="#main" className="inline-flex min-h-9 items-center gap-1.5 hover:text-accent">
+          <a href="#main" className="inline-flex min-h-11 items-center gap-1.5 hover:text-accent">
             Back to top <span aria-hidden="true">↑</span>
           </a>
         </div>

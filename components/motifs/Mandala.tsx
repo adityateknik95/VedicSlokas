@@ -21,7 +21,8 @@ export function Mandala({ className = "", variant = "full", asImage = false }: P
   }
   return (
     <svg viewBox="-250 -250 500 500" aria-hidden="true" focusable="false" className={className}>
-      <use href={`/motifs/mandala-${variant}-gold.svg#m`} />
+      {/* The symbol has its own centred viewBox, so place it over the whole frame. */}
+      <use href={`/motifs/mandala-${variant}-gold.svg#m`} x="-250" y="-250" width="500" height="500" />
     </svg>
   );
 }

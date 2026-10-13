@@ -46,3 +46,57 @@ export function OgMandala({ size = 760, opacity = 0.22 }: { size?: number; opaci
     </svg>
   );
 }
+
+// Deterministic star positions (a tiny LCG), so the share image never changes between builds.
+const STARS = (() => {
+  let seed = 7;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  return Array.from({ length: 90 }, () => ({ x: rand() * 1200, y: rand() * 630, r: 0.6 + rand() * 1.8, o: 0.25 + rand() * 0.65 }));
+})();
+
+/** The landing page's share card: the night sky, a mandala galaxy and "From the universe, to you." */
+export function CosmosCard({ eyebrow, lead, tail, emphasis }: { eyebrow: string; lead: string; tail: string; emphasis: string }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "radial-gradient(760px 520px at 50% 42%, #2b1d4a 0%, #120d2a 45%, #05040d 100%)",
+        color: "#F3E7CF",
+        position: "relative",
+      }}
+    >
+      <svg width="1200" height="630" viewBox="0 0 1200 630" style={{ position: "absolute", left: 0, top: 0 }}>
+        {STARS.map((s, i) => (
+          <circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#fff6e4" fillOpacity={s.o} />
+        ))}
+      </svg>
+      <div style={{ position: "absolute", display: "flex" }}>
+        <OgMandala size={980} opacity={0.2} />
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          width: 520,
+          height: 520,
+          borderRadius: 9999,
+          display: "flex",
+          background: "radial-gradient(circle, rgba(255,190,120,0.22), rgba(255,190,120,0) 70%)",
+        }}
+      />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+        <div style={{ fontFamily: "Inter", fontSize: 22, letterSpacing: 8, textTransform: "uppercase", color: "#F0A04B" }}>{eyebrow}</div>
+        <div style={{ display: "flex", fontFamily: "Cormorant", fontSize: 104, lineHeight: 1.05, marginTop: 22 }}>{lead}</div>
+        <div style={{ display: "flex", fontFamily: "Cormorant", fontSize: 104, lineHeight: 1.05 }}>
+          {tail}&nbsp;<span style={{ color: "#F0B35C" }}>{emphasis}</span>
+        </div>
+        <div style={{ display: "flex", fontFamily: "Cormorant", fontSize: 40, color: "#D9B45C", marginTop: 26 }}>
+          Vedic<span style={{ color: "#F3E7CF" }}>Slokas</span>
+        </div>
+      </div>
+    </div>
+  );
+}

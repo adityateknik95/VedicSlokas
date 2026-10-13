@@ -114,7 +114,6 @@ export function TempleCarousel() {
             target="_blank"
             rel="noopener noreferrer"
             aria-roledescription="slide"
-            aria-label={`${active + 1} of ${temples.length}: ${temple.name}, ${temple.action} (opens in a new tab)`}
             className="group relative block min-h-[460px] overflow-hidden rounded-[1.6rem] border border-gold/50 bg-bg-2 shadow-[0_24px_70px_-35px_rgba(201,162,75,0.65)] sm:min-h-[540px]"
           >
             {/* The photos are portrait and small, so instead of stretching them across the
@@ -150,6 +149,7 @@ export function TempleCarousel() {
               <span className="mx-auto mt-6 inline-flex items-center gap-3 rounded-full border border-[#f5d88b]/80 bg-[#f5d88b] px-6 py-3 text-sm font-semibold text-[#21160b] transition group-hover:bg-white sm:px-8">
                 {temple.action}
                 <span aria-hidden="true">↗</span>
+                <span className="sr-only">(opens in a new tab)</span>
               </span>
             </div>
           </a>
@@ -182,7 +182,7 @@ export function TempleCarousel() {
               type="button"
               onClick={() => setUserPaused((p) => !p)}
               aria-label={userPaused ? "Play slideshow" : "Pause slideshow"}
-              className="mr-2 grid h-9 w-9 place-items-center rounded-full border border-gold/50 text-ink transition hover:bg-gold hover:text-black"
+              className="mr-1 grid h-11 w-11 place-items-center rounded-full border border-gold/50 text-ink transition hover:bg-gold hover:text-black"
             >
               {userPaused ? (
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 translate-x-px" fill="currentColor" aria-hidden="true">
@@ -196,7 +196,7 @@ export function TempleCarousel() {
               )}
             </button>
           )}
-          <div className="flex items-center gap-3" role="group" aria-label="Choose a temple slide">
+          <div className="flex items-center" role="group" aria-label="Choose a temple slide">
             {temples.map((item, index) => (
               <button
                 key={item.name}
@@ -204,8 +204,14 @@ export function TempleCarousel() {
                 onClick={() => setActive(index)}
                 aria-label={`Show ${item.name}`}
                 aria-current={active === index ? "true" : undefined}
-                className={`h-2.5 rounded-full transition-all duration-300 ${active === index ? "w-8 bg-gold" : "w-2.5 bg-ink-muted/40 hover:bg-gold/70"}`}
-              />
+                className="group grid h-11 min-w-11 place-items-center px-1.5"
+              >
+                {/* The dot stays small; the button around it is a full 44px touch target. */}
+                <span
+                  aria-hidden="true"
+                  className={`block h-2.5 rounded-full transition-all duration-300 ${active === index ? "w-8 bg-gold" : "w-2.5 bg-ink-muted/40 group-hover:bg-gold/70"}`}
+                />
+              </button>
             ))}
           </div>
         </div>
