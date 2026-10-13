@@ -18,6 +18,10 @@ export const SESSION_HINT_COOKIE = "vs_signed_in";
 
 const isSecure = () => siteOrigin().startsWith("https://");
 
+function withoutProviderTokens<T extends object>(account: T): T {
+  return { ...account, accessToken: null, refreshToken: null, idToken: null, accessTokenExpiresAt: null, refreshTokenExpiresAt: null };
+}
+
 function buildAuth(db: Db) {
   const google = isGoogleEnabled();
 
@@ -92,10 +96,17 @@ function buildAuth(db: Db) {
           },
         },
       },
+      account: {
+        // Google is used only to prove who someone is. Its API tokens are never needed, so
+        // they're never stored: nothing to leak if the database is ever exposed.
+        create: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
+        update: { before: async (account) => ({ data: withoutProviderTokens(account) }) },
+      },
       session: {
         create: {
           after: async (session, ctx) => {
-            if (ctx?.path?.startsWith("/callback/google")) {
+            // Better Auth reports the route pattern ("/callback/:id"), so check the provider param.
+            if (ctx?.path === "/callback/:id" && ctx.params?.id === "google") {
               await audit("google_sign_in", { userId: session.userId, ip: session.ipAddress, userAgent: session.userAgent });
             }
           },
