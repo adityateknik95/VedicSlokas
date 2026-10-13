@@ -67,3 +67,92 @@ scripts/             build-motifs.mjs: regenerates public/motifs/*.svg (`npm run
 
 Lighthouse (local production build, quiet machine): mobile Performance 91–95,
 desktop 100; Accessibility, Best Practices and SEO 100 on every page.
+
+## Authentication
+
+Passwordless sign-in for students: **Continue with Google**, or **Continue with email** (a
+single-use magic link). There are no passwords anywhere. Built with Better Auth (Drizzle
+adapter, Google provider, magic-link plugin), Neon Postgres, Resend, Upstash and zod.
+
+### How it works
+
+- **Sign up (email):** name + email + consent → the account is created *unverified* (with
+  `terms_accepted_at` / `terms_version`) and a link is emailed. Using the link verifies the email.
+- **Log in (email):** if the account exists, a sign-in link is sent; if not, a "we couldn't find an
+  account, create one here" email is sent. The screen is identical either way (no enumeration).
+- **The link** opens `/auth/confirm`, which only *shows* "Sign in as you@example.com". The
+  **Confirm sign in** button (a POST) is what uses the token, so mail scanners that prefetch links
+  can't burn it. Links are single-use, expire after 15 minutes, are stored only as a SHA-256 hash,
+  and requesting a new one cancels the old ones. "This was not me" cancels the link.
+- **Google:** email + profile scopes only. A Google sign-in is linked to an existing email account
+  only when Google reports the address verified.
+- **Sessions:** database-backed, httpOnly + SameSite=Lax cookies (Secure on https), 30 days,
+  sliding. Sign-out deletes the session row and signs out other open tabs.
+- **Cross-device:** the "Check your inbox" tab polls `/api/sign-in-status`. Confirm in the same
+  browser and it moves on to the dashboard; confirm on another device and it says so (it does
+  not sign in the waiting browser, which would let someone hijack a sign-in by requesting it).
+- **Roles:** `user.role` is `student` (default), `teacher` or `admin`. See `requireRole()` in
+  `lib/session.ts`.
+- **Rate limits:** 10 link emails per IP per hour, 5 per address per hour, 60 s between links to
+  the same address (all sliding windows, keys hashed). Limits answer with a friendly countdown.
+- **Audit log:** `audit_log` records link requested/used/expired/invalid, Google sign-in, sign-out,
+  rate limiting and email failures. Tokens are never logged.
+
+Key files: `lib/auth.ts` (config), `lib/auth-flows.ts` (send/confirm logic), `app/(auth)/actions.ts`
+(server actions), `lib/session.ts`, `proxy.ts` (cookie-presence redirects only),
+`db/schema.ts`, `components/auth/*`.
+
+### Setup
+
+1. **Environment.** Copy `.env.example` to `.env.local` and fill it in. Every variable is
+   documented there. In development all of them are optional (see below); in production the
+   auth routes refuse to run until the required ones are set.
+2. **Database (Neon).** Create a project at neon.tech, copy the pooled connection string into
+   `DATABASE_URL`, then apply migrations:
+   ```bash
+   npm run db:migrate
+   ```
+   After changing `db/schema.ts`, create a new migration with `npm run db:generate`.
+3. **Google OAuth.** Google Cloud Console → APIs & Services → OAuth consent screen (scopes:
+   `email`, `profile`, `openid`), then Credentials → OAuth client ID → *Web application*.
+   Authorized redirect URIs:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://<your-domain>/api/auth/callback/google` (e.g. `https://vedicslokas.vercel.app/...`)
+
+   Put the ID and secret in `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
+4. **Email (Resend).** Add and verify a sending domain at resend.com (DNS records for SPF/DKIM),
+   create an API key, and set `RESEND_API_KEY` and `EMAIL_FROM` (an address on that domain).
+5. **Rate limiting (Upstash).** Create a Redis database at upstash.com and copy its REST URL and
+   token into `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
+6. **Secret and URL.** `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL`
+   (the public origin, e.g. `https://vedicslokas.vercel.app`).
+7. **Vercel.** Add the same variables under Project → Settings → Environment Variables, run
+   `npm run db:migrate` against the production database, then deploy.
+8. **Bot protection (optional).** Cloudflare Turnstile is wired in but off. Set
+   `TURNSTILE_ENABLED=true` plus both keys to turn it on.
+
+### Testing locally
+
+With no `.env.local` at all, `npm run dev` just works:
+- the database is an embedded Postgres (PGlite) in `./.pglite`, migrated automatically;
+- emails are written to `./.dev-outbox/<address>.json` (open the file and copy the link);
+- rate limits are kept in memory (a warning is printed);
+- the Google button shows as unavailable until Google keys are set.
+
+```bash
+npm run typecheck   # route types + TypeScript
+npm test            # unit + integration (in-memory Postgres): redirects, typos, tokens
+npm run build
+npm run test:e2e    # Playwright smoke tests against the production build (uses installed Chrome)
+```
+
+### Decisions and follow-ups
+
+- **CSP** on auth routes allows `'unsafe-inline'` scripts (Next.js bootstrap and the theme boot
+  script). A nonce-based policy is a possible hardening step.
+- **Token lookup** is by SHA-256 hash in the database (no raw-token comparison happens), which is
+  the constant-time-safe approach.
+- **Out of scope, intentionally not built** (each has a `TODO` in the code): payments and plans,
+  the real dashboard (classes, recordings, notes), the admin panel, video, a per-student device
+  limit, 2FA, phone OTP, and copying localStorage favorites into the account. Passwords will
+  never be added.

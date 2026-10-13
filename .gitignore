@@ -9,3 +9,14 @@ next-env.d.ts
 
 .vercel
 *.zip
+
+# Local auth development
+.pglite
+.pglite-*
+.dev-outbox
+.env
+.env.*
+!.env.example
+# Test output
+test-results
+playwright-report

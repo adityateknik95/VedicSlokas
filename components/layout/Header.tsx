@@ -6,6 +6,8 @@ import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Diya } from "@/components/motifs";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useFavorites } from "@/lib/favorites";
+import { AccountLink } from "@/components/auth/AccountLink";
+import { AuthSync } from "@/components/auth/AuthSync";
 import { SurpriseButton } from "./SurpriseButton";
 
 type NavKey = "home" | "library" | "favorites" | "translate" | "about";
@@ -196,13 +198,20 @@ export function Header({ slugs }: { slugs: string[] }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:block">
+            <span className="hidden xl:block">
               <SurpriseButton slugs={slugs} />
             </span>
-            <span className="sm:hidden">
+            <span className="xl:hidden">
               <SurpriseButton slugs={slugs} compact className="w-11 justify-center !px-0" />
             </span>
             <ThemeToggle />
+            <span className="hidden lg:block">
+              <AccountLink />
+            </span>
+            <span className="lg:hidden">
+              <AccountLink compact />
+            </span>
+            <AuthSync />
           </div>
         </div>
         {/* Gold hairline that appears once the page scrolls under the bar. */}

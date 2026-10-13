@@ -421,3 +421,80 @@ html.lenis body {
   line-height: 1.9;
   word-spacing: 0.08em;
 }
+
+/* ───────────────────────── Auth ───────────────────────── */
+.field {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.9rem;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 0.75rem 1rem;
+  font-size: 1rem; /* ≥16px stops iOS zooming on focus */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.field::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.75;
+}
+.field:hover {
+  border-color: rgb(201 162 75 / 0.55);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgb(201 162 75 / 0.28);
+}
+.field[aria-invalid="true"] {
+  border-color: #e0685a;
+  box-shadow: 0 0 0 3px rgb(224 104 90 / 0.18);
+}
+.field-error {
+  color: #f19a8f;
+}
+[data-theme="parchment"] .field-error {
+  color: #a3271b;
+}
+[data-theme="parchment"] .field[aria-invalid="true"] {
+  border-color: #a3271b;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+
+/* The verse on the auth panel glows softly, like a lamp breathing. */
+@keyframes lamp-breathe {
+  0%,
+  100% {
+    text-shadow: 0 0 18px rgb(232 137 28 / 0.25);
+    opacity: 0.92;
+  }
+  50% {
+    text-shadow: 0 0 34px rgb(232 137 28 / 0.55);
+    opacity: 1;
+  }
+}
+.lamp-breathe {
+  animation: lamp-breathe 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lamp-breathe {
+    animation: fade-in 0.8s ease forwards;
+  }
+  .spinner {
+    animation-duration: 1.6s;
+  }
+}
