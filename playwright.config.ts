@@ -28,6 +28,14 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       VEDIC_E2E: "1",
+      // Blank values win over .env.local (and count as unset), so the tests never reach
+      // the real Neon database, Resend, Upstash or Google, even once those keys exist locally.
+      DATABASE_URL: "",
+      RESEND_API_KEY: "",
+      UPSTASH_REDIS_REST_URL: "",
+      UPSTASH_REDIS_REST_TOKEN: "",
+      GOOGLE_CLIENT_ID: "",
+      GOOGLE_CLIENT_SECRET: "",
       PGLITE_DIR: ".pglite-e2e",
       BETTER_AUTH_URL: `http://localhost:${PORT}`,
       NEXT_PUBLIC_SITE_URL: `http://localhost:${PORT}`,
