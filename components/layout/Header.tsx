@@ -81,11 +81,15 @@ function useActiveKey() {
 
 type NavProps = { active: NavKey | null };
 
+/** The shared frosted-gold pill used by both the nav and the action group. */
+const PILL =
+  "rounded-full border border-gold/30 bg-bg-2/70 p-1 shadow-[inset_0_1px_0_rgb(243_231_207/0.06),0_12px_40px_-18px_var(--glow)] backdrop-blur-md";
+
 /** Desktop: a floating pill, like a lamp-lit temple corridor. The active tab holds the flame. */
 function DesktopNav({ active }: NavProps) {
   const { favorites } = useFavorites();
   return (
-    <ul className="relative flex items-center gap-1 rounded-full border border-gold/30 bg-bg-2/70 p-1.5 shadow-[inset_0_1px_0_rgb(243_231_207/0.06),0_12px_40px_-18px_var(--glow)] backdrop-blur-md">
+    <ul className={`relative flex items-center gap-0.5 ${PILL}`}>
       {NAV.map((item) => {
         const on = active === item.key;
         return (
@@ -93,14 +97,15 @@ function DesktopNav({ active }: NavProps) {
             <Link
               href={item.href}
               aria-current={on ? "page" : undefined}
-              className={`group relative flex h-10 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all duration-300 ${
+              title={item.label}
+              className={`group relative flex h-10 items-center gap-2 whitespace-nowrap rounded-full px-3 text-sm font-medium transition-all duration-300 xl:px-4 ${
                 on
                   ? "bg-gradient-to-b from-saffron/25 to-gold/10 text-accent shadow-[inset_0_0_0_1px_rgb(201_162_75/0.45),0_0_22px_-6px_var(--glow)]"
                   : "text-ink-muted hover:bg-surface-2 hover:text-ink"
               }`}
             >
               <span className={`transition-transform duration-300 ${on ? "" : "group-hover:-translate-y-px"}`}>{ICONS[item.key]}</span>
-              {item.label}
+              <span className="sr-only xl:not-sr-only">{item.label}</span>
               {item.key === "favorites" && favorites.length > 0 && (
                 <span className="grid h-5 min-w-5 place-items-center rounded-full bg-saffron px-1 text-[0.68rem] font-semibold text-on-saffron">
                   {favorites.length}
@@ -183,8 +188,8 @@ export function Header({ slugs }: { slugs: string[] }) {
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-saffron focus:px-4 focus:py-2 focus:text-on-saffron">
           Skip to content
         </a>
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5 sm:h-20 sm:px-8">
-          <Link href="/" className="flex items-center gap-2.5 rounded-full" aria-label="VedicSlokas home">
+        <div className="mx-auto grid h-16 max-w-[88rem] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:h-[4.75rem] sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
+          <Link href="/" className="flex items-center gap-2.5 justify-self-start rounded-full" aria-label="VedicSlokas home">
             <Diya className="h-9 w-9" />
             <span className="display text-2xl tracking-wide text-ink">
               Vedic<span className="text-accent">Slokas</span>
@@ -197,20 +202,12 @@ export function Header({ slugs }: { slugs: string[] }) {
             </Suspense>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden xl:block">
-              <SurpriseButton slugs={slugs} />
-            </span>
-            <span className="xl:hidden">
-              <SurpriseButton slugs={slugs} compact className="w-11 justify-center !px-0" />
-            </span>
+          {/* Actions share one pill that mirrors the nav: two quiet icon buttons, one highlighted action. */}
+          <div className={`flex items-center gap-0.5 justify-self-end ${PILL}`}>
+            <SurpriseButton slugs={slugs} />
             <ThemeToggle />
-            <span className="hidden lg:block">
-              <AccountLink />
-            </span>
-            <span className="lg:hidden">
-              <AccountLink compact />
-            </span>
+            <span aria-hidden="true" className="mx-1 h-6 w-px bg-line" />
+            <AccountLink />
             <AuthSync />
           </div>
         </div>

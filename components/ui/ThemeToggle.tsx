@@ -30,7 +30,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={isNight ? "Switch to Parchment (light) theme" : "Switch to Night Temple (dark) theme"}
       title={isNight ? "Parchment theme" : "Night Temple theme"}
-      className="grid h-11 w-11 place-items-center rounded-full border border-line text-accent transition-colors hover:border-gold hover:bg-surface-2"
+      className="grid h-11 w-11 place-items-center rounded-full text-accent transition-colors hover:bg-surface-2 hover:text-flame md:h-10 md:w-10"
     >
       {isNight ? (
         // Sun over a scroll: Parchment
