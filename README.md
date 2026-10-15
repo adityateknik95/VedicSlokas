@@ -148,8 +148,15 @@ npm run test:e2e    # Playwright smoke tests against the production build (uses 
 
 ### Decisions and follow-ups
 
-- **CSP** on auth routes allows `'unsafe-inline'` scripts (Next.js bootstrap and the theme boot
-  script). A nonce-based policy is a possible hardening step.
+- **Security headers on every response** (`next.config.ts`): Content-Security-Policy (only this
+  site, Google profile photos and Turnstile may load; nothing may frame the site), X-Frame-Options,
+  nosniff, Referrer-Policy, Permissions-Policy and Cross-Origin-Opener-Policy. HSTS comes from
+  Vercel. The CSP allows `'unsafe-inline'` scripts (Next.js bootstrap and the theme boot script);
+  nonces would force every static page to render per request.
+- **Deleting an account needs a sign-in from the last hour** (`signedInRecently` in
+  `lib/dashboard/api.ts`). Older sessions get `reauth_required`, and Settings links to
+  `/login?reauth=1`, which shows the form even to a signed-in visitor and returns to Settings.
+  Sign out everywhere deliberately does not need it: it is how a student locks out a stolen session.
 - **Token lookup** is by SHA-256 hash in the database (no raw-token comparison happens), which is
   the constant-time-safe approach.
 - **Out of scope, intentionally not built** (each has a `TODO` in the code): payments and plans,

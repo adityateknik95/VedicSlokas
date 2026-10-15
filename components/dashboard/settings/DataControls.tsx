@@ -2,11 +2,14 @@
 
 import { useRef, useState } from "react";
 import { broadcastAuth } from "@/lib/auth-channel";
-import { failureMessage, meFetch } from "@/lib/dashboard/client";
+import { failureMessage, MeError, meFetch } from "@/lib/dashboard/client";
 import { toast } from "@/lib/toast";
 import { trapTab } from "../focus-trap";
 
 const button = "inline-flex min-h-12 items-center justify-center rounded-full border px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+
+/** A fresh sign-in (reauth=1 shows the form to a signed-in visitor), then back to Settings. */
+const REAUTH_URL = `/login?reauth=1&callbackUrl=${encodeURIComponent("/dashboard/settings")}`;
 
 /** Download my data, sign out everywhere, delete my account. */
 export function DataControls({ email }: { email: string }) {
@@ -14,6 +17,7 @@ export function DataControls({ email }: { email: string }) {
   const opener = useRef<HTMLButtonElement>(null);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   const signOutEverywhere = async () => {
@@ -44,8 +48,12 @@ export function DataControls({ email }: { email: string }) {
       window.dispatchEvent(new Event("vs-auth-change"));
       window.location.assign("/?accountDeleted=1");
     } catch (error) {
-      toast(failureMessage(error, "delete your account"), { tone: "error" });
       setDeleting(false);
+      if (error instanceof MeError && error.code === "reauth_required") {
+        setNeedsSignIn(true);
+        return;
+      }
+      toast(failureMessage(error, "delete your account"), { tone: "error" });
     }
   };
 
@@ -81,6 +89,7 @@ export function DataControls({ email }: { email: string }) {
           type="button"
           onClick={() => {
             setConfirmText("");
+            setNeedsSignIn(false);
             dialog.current?.showModal();
           }}
           className={`${button} border-[#e0796a]/60 text-ink hover:bg-[#e0796a]/15`}
@@ -123,6 +132,15 @@ export function DataControls({ email }: { email: string }) {
             spellCheck={false}
             className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-4 tracking-[0.2em] text-ink focus:border-[#e0796a]"
           />
+          {needsSignIn && (
+            <p role="alert" className="mt-4 rounded-xl border border-[#e0796a]/50 p-3 text-sm text-ink">
+              To keep your account safe, deleting it needs a sign-in from the last hour.{" "}
+              <a href={REAUTH_URL} className="font-semibold text-accent underline underline-offset-4">
+                Sign in again
+              </a>
+              , then come back here.
+            </p>
+          )}
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <button type="button" onClick={() => dialog.current?.close()} className={`${button} border-line text-ink hover:border-gold`}>
               Keep my account

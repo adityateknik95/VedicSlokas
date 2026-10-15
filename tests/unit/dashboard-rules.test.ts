@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { RECENT_SIGN_IN_MS, signedInRecently } from "@/lib/dashboard/api";
 import { activeModule, MODULES, moduleAccess, modulesFor, NO_ENTITLEMENTS, type DashboardModule } from "@/lib/dashboard/modules";
 import { deleteBody, favouriteBody, interestBody, prefsBody, profileBody, viewBody } from "@/lib/dashboard/schemas";
 import { getEntitlements } from "@/lib/entitlements";
@@ -87,5 +88,21 @@ describe("entitlement gating", () => {
 
   it("grants nothing today (no subscriptions yet)", async () => {
     expect(await getEntitlements("anyone")).toEqual({ liveClasses: false, notes: false, courses: false });
+  });
+});
+
+describe("permanent actions need a recent sign-in", () => {
+  const now = Date.parse("2026-10-15T12:00:00Z");
+  const startedAgo = (ms: number) => ({ session: { createdAt: new Date(now - ms) } });
+
+  it("allows a session that signed in within the hour", () => {
+    expect(signedInRecently(startedAgo(5 * 60 * 1000), now)).toBe(true);
+    expect(signedInRecently(startedAgo(RECENT_SIGN_IN_MS), now)).toBe(true);
+  });
+
+  it("refuses an older session, and anything it cannot read", () => {
+    expect(signedInRecently(startedAgo(RECENT_SIGN_IN_MS + 1), now)).toBe(false);
+    expect(signedInRecently(startedAgo(20 * 24 * 60 * 60 * 1000), now)).toBe(false);
+    expect(signedInRecently({ session: { createdAt: "not a date" } }, now)).toBe(false);
   });
 });

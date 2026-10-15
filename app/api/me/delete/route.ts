@@ -2,7 +2,7 @@ import { cookies, headers } from "next/headers";
 import { audit } from "@/lib/audit";
 import { getAuth, SESSION_HINT_COOKIE } from "@/lib/auth";
 import { deleteAccount } from "@/lib/dashboard/data";
-import { json, meRoute, readBody } from "@/lib/dashboard/api";
+import { json, meRoute, readBody, reauthRequired, signedInRecently } from "@/lib/dashboard/api";
 import { deleteBody } from "@/lib/dashboard/schemas";
 import { accountDeletedEmail } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/send";
@@ -12,11 +12,13 @@ export const dynamic = "force-dynamic";
 
 /**
  * Deletes the account immediately: every row of the student's data goes (database cascade),
- * every session on every device ends, and a confirmation email is sent.
+ * every session on every device ends, and a confirmation email is sent. Only from a session
+ * that signed in within the last hour: the page then asks the student to sign in again.
  */
 export const POST = meRoute(
   async ({ request, session }) => {
     await readBody(request, deleteBody);
+    if (!signedInRecently(session)) return reauthRequired();
     const { id, email, name } = session.user;
 
     const auth = await getAuth();

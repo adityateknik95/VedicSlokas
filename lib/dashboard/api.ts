@@ -15,7 +15,7 @@ import { getSession, type Session } from "@/lib/session";
 
 const NO_STORE = { "Cache-Control": "no-store, max-age=0", "X-Content-Type-Options": "nosniff" };
 
-export type ApiErrorCode = "unauthenticated" | "forbidden" | "rate_limited" | "invalid" | "server_error";
+export type ApiErrorCode = "unauthenticated" | "forbidden" | "reauth_required" | "rate_limited" | "invalid" | "server_error";
 export type ApiError = { error: ApiErrorCode; retryAt?: number; issues?: string[] };
 
 export function json<T>(body: T, status = 200, headers: Record<string, string> = {}): NextResponse<T> {
@@ -50,6 +50,21 @@ export function readQuery<S extends z.ZodType>(request: Request, schema: S): z.i
   if (!parsed.success) throw new Invalid(parsed.error.issues.map((i) => `${i.path.join(".") || "query"}: ${i.message}`));
   return parsed.data;
 }
+
+/** How recently a student must have signed in to do something permanent, like deleting the account. */
+export const RECENT_SIGN_IN_MS = 60 * 60 * 1000;
+
+/**
+ * True when this session began (a fresh sign-in) within RECENT_SIGN_IN_MS. Sessions last
+ * 30 days, so a cookie left on a shared computer, or stolen, must not be enough on its own.
+ */
+export function signedInRecently(session: { session: { createdAt: Date | string } }, now = Date.now()): boolean {
+  const started = new Date(session.session.createdAt).getTime();
+  return Number.isFinite(started) && now - started <= RECENT_SIGN_IN_MS;
+}
+
+/** The response for an action that needs a fresh sign-in first. */
+export const reauthRequired = () => fail("reauth_required", 403);
 
 function sameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");

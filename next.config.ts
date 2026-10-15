@@ -3,12 +3,13 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV !== "production";
 
 /**
- * Content-Security-Policy for the auth pages. Allows the app itself, Google sign-in
- * (a top-level redirect, plus Google profile photos) and Cloudflare Turnstile.
- * 'unsafe-inline' scripts are needed for Next.js's inline bootstrap and our theme boot
- * script; moving to a nonce-based policy is a follow-up (see README → Authentication).
+ * Content-Security-Policy for every page. Allows the app itself, Google sign-in (a top-level
+ * redirect, plus Google profile photos) and Cloudflare Turnstile; nothing else may load,
+ * and no other site may frame us. 'unsafe-inline' scripts are needed for Next.js's inline
+ * bootstrap and our theme boot script on static pages (nonces would force every page to be
+ * rendered per request); see README → Authentication.
  */
-const authCsp = [
+const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
@@ -23,14 +24,18 @@ const authCsp = [
   ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
-const authHeaders = (referrerPolicy: string) => [
-  { key: "Content-Security-Policy", value: authCsp },
+/** Sent with every response. HSTS comes from Vercel (max-age two years, preload). */
+const siteHeaders = [
+  { key: "Content-Security-Policy", value: csp },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: referrerPolicy },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()" },
-  { key: "Cache-Control", value: "no-store, max-age=0" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
+
+/** Signed-in and auth pages are never cached; a later rule wins for the same header. */
+const noStore = [{ key: "Cache-Control", value: "no-store, max-age=0" }];
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -44,19 +49,19 @@ const nextConfig: NextConfig = {
   async headers() {
     // Fonts and motifs are content-stable files; rename them if they ever change.
     const immutable = [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }];
-    const strict = authHeaders("strict-origin-when-cross-origin");
     return [
+      { source: "/:path*", headers: siteHeaders },
       { source: "/fonts/:path*", headers: immutable },
       { source: "/motifs/:path*", headers: immutable },
-      { source: "/login", headers: strict },
-      { source: "/signup", headers: strict },
-      { source: "/check-email", headers: strict },
-      { source: "/dashboard/:path*", headers: strict },
-      { source: "/dashboard", headers: strict },
-      { source: "/api/auth/:path*", headers: strict },
-      { source: "/api/sign-in-status", headers: strict },
+      { source: "/login", headers: noStore },
+      { source: "/signup", headers: noStore },
+      { source: "/check-email", headers: noStore },
+      { source: "/dashboard/:path*", headers: noStore },
+      { source: "/dashboard", headers: noStore },
+      { source: "/api/auth/:path*", headers: noStore },
+      { source: "/api/sign-in-status", headers: noStore },
       // The confirm page carries a token in its URL: never send it anywhere as a Referer.
-      { source: "/auth/:path*", headers: authHeaders("no-referrer") },
+      { source: "/auth/:path*", headers: [...noStore, { key: "Referrer-Policy", value: "no-referrer" }] },
     ];
   },
   experimental: {

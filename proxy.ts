@@ -18,8 +18,10 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
-  // A stale cookie sends people here with ?expired=1; let them log in instead of looping.
-  if (hasSession && GUEST_ONLY.includes(pathname) && searchParams.get("expired") !== "1") {
+  // A stale cookie sends people here with ?expired=1, and a permanent action asks for a fresh
+  // sign-in with ?reauth=1; let them log in instead of looping.
+  const signInAgain = searchParams.get("expired") === "1" || searchParams.get("reauth") === "1";
+  if (hasSession && GUEST_ONLY.includes(pathname) && !signInAgain) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
