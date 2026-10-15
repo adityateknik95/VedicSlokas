@@ -93,19 +93,21 @@ test("confirm page: viewing the link doesn't use it; the button does, once", asy
   await expect(page).not.toHaveURL(/token=/); // stripped from the address bar
 
   await page.getByRole("button", { name: "Confirm sign in" }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  // A brand-new student lands in the dashboard's first-run welcome.
+  await expect(page).toHaveURL(/\/dashboard\/welcome$/);
   await expect(page.getByRole("heading", { name: /Namaste, Confirm/ })).toBeVisible();
+  await page.getByRole("button", { name: /Account menu/ }).click();
   await expect(page.getByText(email)).toBeVisible();
-  await expect(page.getByText("No active plan yet")).toBeVisible();
 
   // Second use: friendly page with a way forward.
   await page.goto(link);
   await expect(page.getByRole("heading", { name: "This link can't be used" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Send me a new link" })).toBeVisible();
 
-  // Signing out revokes the session.
-  await page.goto("/dashboard");
-  await page.getByRole("button", { name: "Sign out" }).click();
+  // Signing out (from the account menu) revokes the session.
+  await page.goto("/dashboard/settings");
+  await page.getByRole("button", { name: /Account menu/ }).click();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page).toHaveURL(/\/login\?signedOut=1/);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fdashboard/);

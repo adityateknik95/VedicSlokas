@@ -24,8 +24,9 @@ function usePrefersReducedMotion() {
 }
 
 /** Reveals [data-reveal] elements as they enter the viewport, including ones added later. */
-function useRevealObserver(pathname: string) {
+function useRevealObserver(pathname: string, enabled: boolean) {
   useEffect(() => {
+    if (!enabled) return;
     const root = document.documentElement;
     const io = new IntersectionObserver(
       (entries) => {
@@ -57,8 +58,11 @@ function useRevealObserver(pathname: string) {
       io.disconnect();
       mo.disconnect();
     };
-  }, [pathname]);
+  }, [pathname, enabled]);
 }
+
+/** The signed-in app has its own light CSS motion: no Lenis, no GSAP, no reveal observer there. */
+const isApp = (pathname: string) => pathname === "/dashboard" || pathname.startsWith("/dashboard/");
 
 type Gsap = typeof import("gsap").gsap;
 type ST = typeof import("gsap/ScrollTrigger").ScrollTrigger;
@@ -70,13 +74,14 @@ export function MotionProvider({ children }: { children: ReactNode }) {
   const gsapRef = useRef<{ gsap: Gsap; ScrollTrigger: ST } | null>(null);
   const [ready, setReady] = useState(false);
   const prevPath = useRef<string | null>(null);
+  const inApp = isApp(pathname);
 
-  useRevealObserver(pathname);
+  useRevealObserver(pathname, !inApp);
 
   // Lazy-load Lenis + GSAP on the first scroll/touch/key: they only matter once the visitor
   // starts moving, so they never compete with first paint. Skipped entirely for reduced motion.
   useEffect(() => {
-    if (reduced) return;
+    if (reduced || inApp) return;
     let cancelled = false;
     let tick: ((time: number) => void) | null = null;
 
@@ -106,7 +111,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
       lenisRef.current = null;
       setReady(false);
     };
-  }, [reduced]);
+  }, [reduced, inApp]);
 
   // Scroll-linked effects for the current page: parallax motifs and scroll-driven rotation.
   useEffect(() => {

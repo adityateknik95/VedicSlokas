@@ -17,7 +17,7 @@ export function YourSpace() {
   const circumference = 2 * Math.PI * r;
 
   return (
-    <section aria-labelledby="space-title" className="defer-render relative overflow-hidden py-24 sm:py-32">
+    <section id="your-space" aria-labelledby="space-title" className="defer-render relative overflow-hidden py-24 sm:py-32">
       <Container className="grid max-w-7xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16">
         <figure className="relative order-2 lg:order-1" aria-labelledby="space-preview-caption">
           <div inert className="card overflow-hidden !rounded-[1.75rem] p-4 sm:p-6">

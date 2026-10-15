@@ -8,6 +8,13 @@ export function getSloka(slug: string): Sloka | undefined {
   return slokas.find((s) => s.slug === slug);
 }
 
+const SLUGS: ReadonlySet<string> = new Set(slokas.map((s) => s.slug));
+
+/** True only for slugs that exist in data/slokas.json. The server checks every write with this. */
+export function isSlokaSlug(value: unknown): value is string {
+  return typeof value === "string" && SLUGS.has(value);
+}
+
 export function getFeatured(): Sloka[] {
   return slokas.filter((s) => s.featured);
 }

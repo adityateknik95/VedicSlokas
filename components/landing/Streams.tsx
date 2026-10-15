@@ -3,14 +3,26 @@ import { Container, SectionHeading } from "@/components/ui";
 import { Tilt } from "@/components/ui/Tilt";
 import { STREAMS_COPY } from "@/lib/landing-copy";
 import { SOURCES, slokas, sourceInfo } from "@/lib/slokas";
+import type { Source } from "@/lib/types";
 
 const ENDS = [125, 375, 625, 875];
+
+/** A photograph behind each card (public/texts). */
+const IMAGES: Record<Source, string> = {
+  Vedas: "/texts/vedas.webp",
+  Upanishads: "/texts/upanishads.webp",
+  "Bhagavad Gita": "/texts/bhagavad-gita.webp",
+  Stotras: "/texts/stotras.webp",
+};
 const river = (x: number) => `M500 28 C500 120 ${x} 110 ${x} 236`;
 
-/** Scene five: four rivers of text flowing from one source. */
+/**
+ * Scene five: four rivers of text flowing from one source. Each card sits on a photograph
+ * and always uses the night palette (data-theme), so its text stays light in either theme.
+ */
 export function Streams() {
   return (
-    <section aria-labelledby="streams-title" className="defer-render relative overflow-hidden py-24 sm:py-32">
+    <section id="texts" aria-labelledby="streams-title" className="defer-render relative overflow-hidden py-24 sm:py-32">
       <Container className="max-w-7xl">
         <SectionHeading id="streams-title" eyebrow={STREAMS_COPY.eyebrow} title={STREAMS_COPY.title} lede={STREAMS_COPY.lede} />
 
@@ -45,7 +57,17 @@ export function Streams() {
             const count = slokas.filter((s) => s.source === source).length;
             return (
               <li key={source} data-reveal style={{ ["--i" as string]: i }}>
-                <Tilt className="h-full !rounded-[1.6rem]">
+                <Tilt data-theme="night" className="group isolate h-full overflow-hidden !rounded-[1.6rem] text-ink">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={IMAGES[source]}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                    className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+                  <span aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-[#0e0b1f]/60 via-[#0e0b1f]/78 to-[#0e0b1f]/94" />
                   <Link href={`/library?source=${encodeURIComponent(source)}`} className="group flex h-full flex-col rounded-[1.6rem] p-6 sm:p-7">
                     <span aria-hidden="true" className="mx-auto mb-4 hidden h-2 w-2 rounded-full bg-teal-300 shadow-[0_0_14px_3px_rgb(79_182_194/0.6)] lg:block" />
                     <span lang="sa" className="deva text-[2.1rem] leading-tight text-accent">

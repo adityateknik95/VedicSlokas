@@ -525,12 +525,12 @@ html.lenis body {
 }
 
 /* The hero's content sits in the space below the fixed header, centred there, with room
-   kept at the bottom for the scroll cue (and, below md, the bottom tab bar). */
+   kept at the bottom for the scroll cue. */
 .hero-space {
   min-height: 100vh; /* fallback */
   min-height: 100svh; /* the small viewport: never taller than the screen with browser UI showing */
   padding-top: calc(var(--nav-h) + 1.5rem);
-  padding-bottom: calc(10.5rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
 }
 @media (min-width: 768px) {
   .hero-space {
@@ -896,4 +896,389 @@ html.motion-paused *::after {
     animation: none;
     display: none;
   }
+}
+
+/* ───────────────────────── Dashboard (the signed-in app) ─────────────────────────
+   Calm and functional: the landing page's night and gold, quieter. Layout is a sidebar
+   (desktop) + top bar + content, and a tab bar on phones. Motion is gentle and becomes
+   fades only under prefers-reduced-motion or the Settings "reduce motion" override. */
+.dash {
+  --dash-side: 16rem;
+  --dash-top: 4.25rem;
+  min-height: 100dvh;
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(42 23 72 / 0.35), transparent 70%),
+    radial-gradient(50rem 30rem at -10% 110%, rgb(12 59 68 / 0.25), transparent 70%),
+    var(--bg);
+}
+[data-theme="parchment"] .dash {
+  background:
+    radial-gradient(60rem 30rem at 85% -10%, rgb(201 162 75 / 0.18), transparent 70%),
+    var(--bg);
+}
+.dash[data-sidebar="collapsed"] {
+  --dash-side: 4.75rem;
+}
+
+.dash-sidebar {
+  display: none;
+}
+@media (min-width: 768px) {
+  .dash-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    display: flex;
+    width: var(--dash-side);
+    flex-direction: column;
+    padding: 1rem 0.75rem;
+    border-right: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg-2) 82%, transparent);
+    backdrop-filter: blur(12px);
+  }
+  .dash-column {
+    padding-left: var(--dash-side);
+  }
+  /* Animate only when the student toggles the sidebar, never on load or window resize. */
+  .dash[data-animate] .dash-sidebar {
+    transition: width 0.35s var(--ease-temple);
+  }
+  .dash[data-animate] .dash-column {
+    transition: padding-left 0.35s var(--ease-temple);
+  }
+}
+.dash[data-sidebar="collapsed"] .dash-label {
+  display: none;
+}
+.dash-brand {
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+}
+.dash-nav-link {
+  position: relative;
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.85rem;
+  border-radius: 0.9rem;
+  font-size: 0.92rem;
+  color: var(--ink-muted);
+  transition: background-color 0.2s, color 0.2s;
+}
+.dash[data-sidebar="collapsed"] .dash-nav-link {
+  justify-content: center;
+  padding: 0;
+}
+.dash-nav-link:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.dash-nav-link[aria-current="page"] {
+  background: linear-gradient(90deg, rgb(232 137 28 / 0.16), rgb(201 162 75 / 0.05));
+  color: var(--ink);
+  font-weight: 600;
+}
+.dash-nav-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--saffron);
+  box-shadow: 0 0 10px 1px var(--glow);
+}
+
+.dash-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  height: var(--dash-top);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(12px);
+}
+@media (min-width: 640px) {
+  .dash-topbar {
+    padding: 0 1.5rem;
+  }
+}
+.dash-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  color: var(--ink);
+}
+.dash-main {
+  display: block;
+  /* 1.25rem matches the library filter rows, which bleed to the edges with -mx-5. */
+  padding: 1.5rem 1.25rem calc(7rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 640px) {
+  .dash-main {
+    padding: 2rem 1.5rem calc(7rem + env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 768px) {
+  .dash-main {
+    padding: 2.25rem 2.5rem 4rem;
+  }
+}
+.dash-page {
+  margin: 0 auto;
+  max-width: 72rem;
+}
+
+/* Tab bar (phones). Safe areas respected; Surprise rises out of the bar. */
+.dash-tabbar {
+  position: fixed;
+  inset: auto 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) 0.75rem;
+  z-index: 40;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, var(--bg-2) 88%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 0.7);
+}
+.dash-tab {
+  display: flex;
+  min-height: 3.25rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  border-radius: 1.1rem;
+  color: var(--ink-muted);
+}
+.dash-tab[aria-current="page"] {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.dash-tab[aria-current="page"] svg {
+  color: var(--flame);
+}
+.dash-tab-surprise {
+  display: flex;
+  height: 3.75rem;
+  width: 3.75rem;
+  margin-top: -1.4rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  border-radius: 999px;
+  background: radial-gradient(circle at 35% 30%, #f6b25b, var(--saffron) 60%, #b4600c);
+  color: var(--on-saffron);
+  box-shadow: 0 10px 26px -8px var(--glow), 0 0 0 4px var(--bg);
+  transition: transform 0.25s var(--ease-temple);
+}
+.dash-tab-surprise:active {
+  transform: scale(0.94);
+}
+
+/* Cards and sections */
+.dash-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 1.4rem;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.dash-card-hover:hover,
+.dash-card-hover:focus-within {
+  border-color: color-mix(in srgb, var(--gold) 70%, transparent);
+  box-shadow: 0 20px 50px -30px var(--glow);
+}
+.dash-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 60%, transparent), transparent);
+}
+.dash-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.dash-chip {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  color: var(--ink);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.dash-chip:hover {
+  border-color: var(--gold);
+  background: var(--surface-2);
+}
+
+/* Programmatically focused headings (onboarding steps) need no ring: focus is for the reader. */
+.dash h1[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* Public scroll reveals do not run in the app: cards are simply there (with .dash-enter where wanted). */
+.js:not(.no-motion) .dash [data-reveal]:not(.is-in),
+.dash [data-reveal] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+/* Staggered entrance for cards (fade and a small rise). */
+/* Starts at 25% (not 0) so content counts as painted at once: no delay to first/largest paint. */
+@keyframes dash-rise {
+  from {
+    opacity: 0.25;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.dash-enter {
+  animation: dash-rise 0.6s var(--ease-out-expo) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* Skeletons: same footprint as the content they stand in for. */
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, color-mix(in srgb, var(--ink) 9%, transparent) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+/* Popovers, toasts, the surprise reveal, the favourite pop, the progress ring. */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  animation: pop-in 0.18s var(--ease-out-expo) both;
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toast-in 0.3s var(--ease-out-expo) both;
+}
+@keyframes surprise-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.surprise-reveal {
+  animation: surprise-reveal 0.7s var(--ease-out-expo) both;
+}
+.surprise-dialog[open] {
+  animation: pop-in 0.25s var(--ease-out-expo) both;
+}
+@keyframes fav-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.32);
+  }
+  65% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1.1);
+  }
+}
+[data-fav-pop="true"] svg {
+  animation: fav-pop 0.45s var(--ease-temple);
+}
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: var(--ring-full);
+  }
+}
+.ring-draw {
+  animation: ring-draw 1.2s var(--ease-out-expo) both;
+}
+@keyframes dash-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion (system setting, or the dashboard's own override): fades only. */
+@media (prefers-reduced-motion: reduce) {
+  .dash-enter,
+  .toast-in,
+  .pop-in,
+  .surprise-reveal,
+  .surprise-dialog[open] {
+    animation: dash-fade 0.3s ease both;
+  }
+  .ring-draw,
+  [data-fav-pop="true"] svg,
+  .skeleton {
+    animation: none;
+  }
+  .dash-sidebar,
+  .dash-column {
+    transition: none;
+  }
+}
+.dash[data-motion="reduce"] .dash-enter,
+.dash[data-motion="reduce"] .toast-in,
+.dash[data-motion="reduce"] .pop-in,
+.dash[data-motion="reduce"] .surprise-reveal,
+.dash[data-motion="reduce"] .surprise-dialog[open] {
+  animation: dash-fade 0.3s ease both;
+}
+.dash[data-motion="reduce"] .ring-draw,
+.dash[data-motion="reduce"] [data-fav-pop="true"] svg,
+.dash[data-motion="reduce"] .skeleton {
+  animation: none;
+}
+.dash[data-motion="reduce"] .dash-sidebar,
+.dash[data-motion="reduce"] .dash-column {
+  transition: none;
 }

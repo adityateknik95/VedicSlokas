@@ -118,8 +118,8 @@ export default function AboutPage() {
           </div>
           <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <ButtonLink href="/library">Explore the Library</ButtonLink>
-            <ButtonLink href="/#sloka-of-the-day" variant="ghost">
-              Today&apos;s sloka
+            <ButtonLink href="/#how-it-works" variant="ghost">
+              How it works
             </ButtonLink>
           </div>
         </Container>

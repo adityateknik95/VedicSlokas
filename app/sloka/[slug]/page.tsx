@@ -6,6 +6,7 @@ import { Container, Eyebrow, ThemeTag } from "@/components/ui";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { AudioButton } from "@/components/sloka/AudioButton";
 import { ShareActions } from "@/components/sloka/ShareActions";
+import { SlokaAccount } from "@/components/sloka/SlokaAccount";
 import { StoryCard } from "@/components/sloka/StoryCard";
 import { SlokaCard } from "@/components/library/SlokaCard";
 import { getRelated, getSloka, slokas } from "@/lib/slokas";
@@ -119,6 +120,8 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
             <AudioButton src={s.audio} title={s.title} />
             <FavoriteButton slug={s.slug} title={s.title} />
             <ShareActions title={s.title} text={copyText} path={`/sloka/${s.slug}`} />
+            {/* Signed-in readers only, after hydration: records the view, offers "Mark as learned". */}
+            <SlokaAccount slug={s.slug} title={s.title} />
           </div>
           <p className="mt-6 text-center">
             <Link

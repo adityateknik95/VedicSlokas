@@ -6,7 +6,8 @@ type Theme = "night" | "parchment";
 export const THEME_KEY = "vedicslokas:theme";
 const COLORS: Record<Theme, string> = { night: "#0E0B1F", parchment: "#F3E7CF" };
 
-export function ThemeToggle() {
+/** `size="app"` keeps a full 44px target (the dashboard top bar); the public header uses 40px on desktop. */
+export function ThemeToggle({ size = "site" }: { size?: "site" | "app" }) {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={isNight ? "Switch to Parchment (light) theme" : "Switch to Night Temple (dark) theme"}
       title={isNight ? "Parchment theme" : "Night Temple theme"}
-      className="grid h-11 w-11 place-items-center rounded-full text-accent transition-colors hover:bg-surface-2 hover:text-flame md:h-10 md:w-10"
+      className={`grid h-11 w-11 place-items-center rounded-full text-accent transition-colors hover:bg-surface-2 hover:text-flame ${size === "site" ? "md:h-10 md:w-10" : ""}`}
     >
       {isNight ? (
         // Sun over a scroll: Parchment

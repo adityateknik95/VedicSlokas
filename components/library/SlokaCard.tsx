@@ -4,15 +4,25 @@ import { Tilt } from "@/components/ui/Tilt";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { cardLineSize } from "@/lib/akshara";
 
+export type CardBadge = "new" | "learned";
+
 /** Library / related-verse card. The whole card is a link; the favorite button sits above it. */
-export function SlokaCard({ sloka, index = 0, headingLevel = "h3" }: { sloka: Sloka; index?: number; headingLevel?: "h2" | "h3" }) {
+export function SlokaCard({ sloka, index = 0, headingLevel = "h3", badge }: { sloka: Sloka; index?: number; headingLevel?: "h2" | "h3"; badge?: CardBadge }) {
   const H = headingLevel;
   const firstLine = sloka.devanagari.split("\n")[0].replace(/[।॥]/g, "").trim();
   return (
     <div data-reveal style={{ ["--i" as string]: index % 6 }} className="h-full">
       <Tilt className="lamp-card group flex h-full flex-col p-6 sm:p-7">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[var(--lamp-flame)]">{sloka.source}</p>
+          <p className="flex flex-wrap items-center gap-2 text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[var(--lamp-flame)]">
+            {sloka.source}
+            {badge === "new" && <span className="rounded-full border border-[#e2bf6a]/60 px-2 py-0.5 text-[0.58rem] tracking-[0.16em] text-[var(--lamp-gold)]">New to you</span>}
+            {badge === "learned" && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#e2bf6a]/20 px-2 py-0.5 text-[0.58rem] tracking-[0.16em] text-[var(--lamp-gold)]">
+                <span aria-hidden="true">✓</span> Learned
+              </span>
+            )}
+          </p>
           <FavoriteButton slug={sloka.slug} title={sloka.title} size="sm" className="relative z-10 -mr-2 -mt-2" />
         </div>
         <p className={`deva lamp-deva mt-3 [overflow-wrap:anywhere] ${cardLineSize(firstLine, "text-2xl sm:text-[1.7rem]", "text-[1.4rem] sm:text-2xl", "text-[1.3rem] sm:text-[1.4rem]")}`} lang="sa">

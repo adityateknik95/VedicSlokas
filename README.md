@@ -153,6 +153,119 @@ npm run test:e2e    # Playwright smoke tests against the production build (uses 
 - **Token lookup** is by SHA-256 hash in the database (no raw-token comparison happens), which is
   the constant-time-safe approach.
 - **Out of scope, intentionally not built** (each has a `TODO` in the code): payments and plans,
-  the real dashboard (classes, recordings, notes), the admin panel, video, a per-student device
-  limit, 2FA, phone OTP, and copying localStorage favorites into the account. Passwords will
-  never be added.
+  live classes, recordings, notes and courses content (see Dashboard below), the admin panel,
+  video, a per-student device limit, 2FA and phone OTP. Passwords will never be added.
+
+## Dashboard
+
+The signed-in app lives under `/dashboard`. Public pages (`/`, `/library`, `/sloka/*`) stay
+static. Nothing about the account is rendered on the server for them; signed-in extras on a
+sloka page (the Learned toggle and view tracking) load on the client, and only when the
+`vs_signed_in` hint cookie is set.
+
+### Routes
+
+| Route | What it is |
+| --- | --- |
+| `/dashboard` | Home: greeting, Sloka of the Day, Surprise me, continue exploring, favourites, progress, browse by feeling, coming-soon rail |
+| `/dashboard/welcome` | Onboarding, three skippable steps (shown once, until `onboardedAt` is set) |
+| `/dashboard/library` | The library with New and Learned badges |
+| `/dashboard/favourites` | Favourites, synced to the account |
+| `/dashboard/progress` | Explored and learned counts, a 12-week streak calendar, per-source lists, history |
+| `/dashboard/classes`, `/notes`, `/courses` | Coming soon, with Notify me |
+| `/dashboard/settings` | Profile, preferences, data export, sign out everywhere, delete account |
+| `/api/me/*` | The JSON API used by the app |
+
+### Where the code is
+
+- `app/dashboard/*`: pages. Each one is `force-dynamic`, with sections streamed in through Suspense.
+- `components/dashboard/*`: the shell (`DashFrame`, `Sidebar`, `TopBar`, `TabBar`) and the
+  sections. `components/layout/SiteChrome.tsx` hides the public header and footer inside the app.
+- `lib/dashboard/`:
+  - `modules.ts`: the module registry, which drives the sidebar, the phone tab bar and the home rail.
+  - `data.ts`: every database query. Each one is scoped by the session user id.
+  - `api.ts` and `schemas.ts`: the route wrapper and the zod bodies.
+  - `state.ts`: per-request cached loaders.
+  - Pure, unit-tested logic: `surprise.ts`, `streak.ts`, `favourites-merge.ts`.
+- `lib/favorites.ts`: one hook (`useFavorites`) over two stores:
+  - signed out, it uses localStorage, as before;
+  - signed in, it uses the account, with optimistic writes, rollback and cross-tab sync.
+
+  On first sign-in, local favourites are merged into the account once. The merge is idempotent.
+- `lib/entitlements.ts`: `getEntitlements(userId)`. Today it grants nothing, because there are
+  no subscriptions yet.
+
+### Adding a module
+
+1. Add an entry to `MODULES` in `lib/dashboard/modules.ts` with:
+   - `key` and `href`;
+   - `placements`: `sidebar`, `tabBar` and/or `homeRail`;
+   - `status`: `"soon"` or `"live"`.
+2. If it will be paid, also set `requires` to an entitlement key. Then:
+   - add that key to `Entitlement`;
+   - compute it in `getEntitlements`.
+3. Build the page under `app/dashboard/<name>`. While the module is `"soon"`, `ModulePage` shows
+   the coming-soon screen. Once it is `"live"`, wrap the paid parts in `<LockedFeature>`, which
+   uses `moduleAccess`.
+
+### API rules
+
+Every `/api/me/*` route goes through `meRoute`:
+- The user id comes only from the session. Bodies are `.strict()`, so a `userId` field is
+  rejected with 400.
+- Writes from another Origin get 403.
+- Responses are `Cache-Control: no-store`.
+- Rate limits apply per user (`lib/rate-limit.ts`).
+- Writes are idempotent: upserts and PUT-like `{ slug, saved }` bodies.
+
+Export and delete are written to `audit_log`, with counts only. Deleting an account cascades to
+every per-user table and scrubs email and IP from that user's audit rows.
+
+### Database
+
+Migration `drizzle/0001_dashboard.sql` adds:
+
+| Table | Holds | Primary key |
+| --- | --- | --- |
+| `favourites` | Saved slokas | `(user_id, sloka_slug)` |
+| `sloka_progress` | First and last viewed, view count (once per day), `learned_at` | `(user_id, sloka_slug)` |
+| `activity_day` | One row per day with activity, for streaks in the student's timezone | `(user_id, day)` |
+| `user_prefs` | Interests, daily email opt-in, timezone, motion, `onboarded_at` | `user_id` |
+| `feature_interest` | Notify me per coming-soon feature | `(user_id, feature)` |
+
+Every table has `ON DELETE CASCADE` to `user`. The migration is additive only.
+
+> **Before deploying the dashboard, apply the migration to Neon:** `npm run db:migrate` (with
+> `DATABASE_URL` in `.env.local`). Without it, `/dashboard` and `/api/me/*` fail in production.
+
+### Working on it locally
+
+```bash
+npm run dev:local
+```
+
+This runs the app on <http://localhost:3001> against a local PGlite database in `.pglite-dev`,
+which is migrated automatically. External keys are blanked, so it never touches Neon, Resend,
+Upstash or Google.
+
+To sign in:
+1. Use the email form.
+2. Open `.dev-outbox/<address>.json`.
+3. Follow the link inside it.
+
+Tests:
+- Unit tests (`npm test`) cover:
+  - the surprise picker, streaks and the favourites merge;
+  - the registry and gating, and the schemas;
+  - the data layer against PGlite: isolation between students, once-per-day views, export and delete.
+- `tests/e2e/dashboard.spec.ts` signs up through the real magic-link form via
+  `tests/e2e/helpers.ts`, which reads `.dev-outbox`. Each test context sends its own
+  `x-forwarded-for`, so the per-IP sign-in limit doesn't trip.
+
+### Not built (TODO in code)
+
+- Live classes and the timetable, booking, notes content, courses and recordings.
+- Payments and plans (`getEntitlements`).
+- Announcements: the bell is a placeholder.
+- The daily email: only the preference is stored. There is no sender yet.
+- Push notifications, an admin panel and a native app.

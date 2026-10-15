@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useFavorites } from "@/lib/favorites";
 
 type Props = { slug: string; title: string; size?: "sm" | "md"; className?: string };
@@ -7,6 +8,7 @@ type Props = { slug: string; title: string; size?: "sm" | "md"; className?: stri
 export function FavoriteButton({ slug, title, size = "md", className = "" }: Props) {
   const { has, toggle } = useFavorites();
   const on = has(slug);
+  const [pop, setPop] = useState(false);
   const dim = size === "sm" ? "h-11 w-11" : "h-12 w-12";
   return (
     <button
@@ -14,8 +16,11 @@ export function FavoriteButton({ slug, title, size = "md", className = "" }: Pro
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
+        setPop(!on);
         toggle(slug);
       }}
+      onAnimationEnd={() => setPop(false)}
+      data-fav-pop={pop ? "true" : undefined}
       aria-pressed={on}
       aria-label={on ? `Remove ${title} from favorites` : `Save ${title} to favorites`}
       title={on ? "Saved to favorites" : "Save to favorites"}

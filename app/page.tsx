@@ -1,17 +1,16 @@
 import type { Metadata } from "next";
-import { SlokaOfTheDay } from "@/components/home/SlokaOfTheDay";
 import { Descent } from "@/components/landing/Descent";
 import { Elements } from "@/components/landing/Elements";
 import { FinalCta } from "@/components/landing/FinalCta";
-import { FindYourVerse } from "@/components/landing/FindYourVerse";
 import { Hero } from "@/components/landing/Hero";
+import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Streams } from "@/components/landing/Streams";
+import { WhatItIs } from "@/components/landing/WhatItIs";
 import { YourSpace } from "@/components/landing/YourSpace";
 import { META } from "@/lib/landing-copy";
-import { getSlokaOfTheDay } from "@/lib/slokas";
 import { site } from "@/lib/site";
 
-// Static, re-rendered hourly so the Sloka of the Day turns over at midnight UTC.
+// Static, re-rendered hourly so the sample Sloka of the Day in "Your space" turns over at midnight UTC.
 // Never read cookies() or headers() here: signed-in touches happen in client components.
 export const revalidate = 3600;
 
@@ -53,8 +52,8 @@ const jsonLd = {
 
 /**
  * The landing journey, from the universe to you:
- * space → the descent → the five elements → find your verse → four streams →
- * sloka of the day → your space → return to yourself.
+ * space → the descent → the five elements → what VedicSlokas is → four streams →
+ * how it works → your space → return to yourself.
  *
  * TODO(pricing): subscriptions and pricing are not part of this page yet.
  * TODO(booking): slot booking and the class timetable will join "Your space" once finalised.
@@ -67,9 +66,9 @@ export default function HomePage() {
       <Hero />
       <Descent />
       <Elements />
-      <FindYourVerse />
+      <WhatItIs />
       <Streams />
-      <SlokaOfTheDay sloka={getSlokaOfTheDay()} />
+      <HowItWorks />
       <YourSpace />
       <FinalCta />
     </>

@@ -1,4 +1,4 @@
-import { boolean, index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Tables used by Better Auth (user, session, account, verification) plus our own audit log.
@@ -100,6 +100,8 @@ export const auditEvent = pgEnum("audit_event", [
   "sign_out",
   "rate_limited",
   "email_send_failed",
+  "account_deleted",
+  "data_exported",
 ]);
 
 /** Security-relevant auth events. Never stores tokens. */
@@ -118,5 +120,90 @@ export const auditLog = pgTable(
   (t) => [index("audit_log_created_at_idx").on(t.createdAt), index("audit_log_email_idx").on(t.email)],
 );
 
+/*
+ * Student state. Sloka content stays in data/slokas.json and is never copied here:
+ * these tables only remember what a person did with it. Every row belongs to a user and
+ * disappears with them (ON DELETE CASCADE), so deleting an account is complete.
+ */
+
+/** Saved slokas. One row per (user, sloka). */
+export const favourites = pgTable(
+  "favourites",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    slokaSlug: text("sloka_slug").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.slokaSlug] }), index("favourites_user_id_idx").on(t.userId)],
+);
+
+/** What a student has read and learned. One row per (user, sloka). */
+export const slokaProgress = pgTable(
+  "sloka_progress",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    slokaSlug: text("sloka_slug").notNull(),
+    firstViewedAt: timestamp("first_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }).notNull().defaultNow(),
+    viewCount: integer("view_count").notNull().default(1),
+    learnedAt: timestamp("learned_at", { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.slokaSlug] }), index("sloka_progress_user_last_viewed_idx").on(t.userId, t.lastViewedAt.desc())],
+);
+
+/**
+ * Days on which a student viewed at least one sloka, as a calendar date in their own
+ * timezone. Lets the streak and the 12-week calendar be exact, which `last_viewed_at`
+ * alone cannot be (it only keeps the latest view of each sloka).
+ */
+export const activityDay = pgTable(
+  "activity_day",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** YYYY-MM-DD in the user's timezone at the time of the view. */
+    day: text("day").notNull(),
+    views: integer("views").notNull().default(1),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.day] })],
+);
+
+/** Onboarding answers and preferences. One row per user, created on first save. */
+export const userPrefs = pgTable("user_prefs", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  interests: text("interests").array().notNull().default([]),
+  dailyEmail: boolean("daily_email").notNull().default(false),
+  onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+  /** IANA name, e.g. "Asia/Kolkata". Detected from the browser, editable in Settings. */
+  timezone: text("timezone"),
+  /** "system" follows the device; "reduce" forces fades only. */
+  motion: text("motion").notNull().default("system"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const FEATURES = ["live_classes", "notes", "courses"] as const;
+export const feature = pgEnum("feature", FEATURES);
+
+/** "Notify me" on a coming-soon module. Tells us what to build first. */
+export const featureInterest = pgTable(
+  "feature_interest",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    feature: feature("feature").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.feature] })],
+);
+
 export type UserRole = (typeof userRole.enumValues)[number];
+export type Feature = (typeof FEATURES)[number];
 export type AuditEvent = (typeof auditEvent.enumValues)[number];

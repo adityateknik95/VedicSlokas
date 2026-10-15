@@ -1,23 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState } from "react";
 import { Tilt } from "@/components/ui/Tilt";
 import { ELEMENTS_COPY, type ElementCopy } from "@/lib/landing-copy";
 
 export type VersePreview = { slug: string; line: string; citation: string };
 
-/** The traditional tattva yantras: Ākāśa an egg, Vāyu a circle, Agni a triangle, Jala a crescent, Pṛthvī a square. */
-const GLYPHS: Record<ElementCopy["key"], { color: string; shape: ReactNode }> = {
-  space: { color: "#9b8cff", shape: <ellipse cx="32" cy="32" rx="15" ry="20" /> },
-  air: { color: "#7fc8ff", shape: <circle cx="32" cy="32" r="17" /> },
-  fire: { color: "#ff7a45", shape: <path d="M32 13 L51 47 L13 47 Z" /> },
-  water: { color: "#cfe3f2", shape: <path d="M15 24 A17 17 0 0 0 49 24 A13 13 0 0 1 15 24 Z" /> },
-  earth: { color: "#f2c94c", shape: <rect x="16" y="16" width="32" height="32" rx="1.5" /> },
+/** Each element's colour, used for its quality dot and the glow of the open card. */
+const COLORS: Record<ElementCopy["key"], string> = {
+  space: "#9b8cff",
+  air: "#7fc8ff",
+  fire: "#ff7a45",
+  water: "#cfe3f2",
+  earth: "#f2c94c",
 };
 
 /**
- * One element card. Tap (or Enter/Space) toggles it open on any device; on desktop a hover
+ * One element card, over a photograph of its element (public/elements). The card always
+ * uses the night palette (data-theme) so its text stays light on the photo in either theme;
+ * a dark wash keeps it readable, and deepens when the card opens to show its verse.
+ *
+ * Tap (or Enter/Space) toggles it open on any device; on desktop a hover
  * previews it too. Closed content is inert, so the keyboard never lands on hidden links.
  */
 export function ElementCard({ item, verse, index }: { item: ElementCopy; verse: VersePreview | null; index: number }) {
@@ -25,32 +29,43 @@ export function ElementCard({ item, verse, index }: { item: ElementCopy; verse: 
   const [hovered, setHovered] = useState(false);
   const open = pinned || hovered;
   const panelId = useId();
-  const glyph = GLYPHS[item.key];
+  const color = COLORS[item.key];
 
   return (
-    <li data-reveal style={{ ["--i" as string]: index, ["--el" as string]: glyph.color }} className="h-full">
+    <li data-reveal style={{ ["--i" as string]: index, ["--el" as string]: color }} className="h-full">
       <Tilt
-        className={`h-full !rounded-[1.6rem] transition-[border-color,box-shadow] duration-500 ${open ? "!border-[color-mix(in_srgb,var(--el)_60%,transparent)] shadow-[0_0_50px_-18px_var(--el)]" : ""}`}
+        data-theme="night"
+        className={`group isolate h-full overflow-hidden !rounded-[1.6rem] text-ink transition-[border-color,box-shadow] duration-500 ${open ? "!border-[color-mix(in_srgb,var(--el)_60%,transparent)] shadow-[0_0_50px_-18px_var(--el)]" : ""}`}
         onPointerEnter={(e) => e.pointerType === "mouse" && setHovered(true)}
         onPointerLeave={(e) => e.pointerType === "mouse" && setHovered(false)}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/elements/${item.key}.webp`}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+          width={600}
+          height={1066}
+          className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+        />
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b transition-opacity duration-500 from-[#0e0b1f]/55 via-[#0e0b1f]/70 to-[#0e0b1f]/92 ${open ? "opacity-0" : "opacity-100"}`}
+        />
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 -z-10 bg-[#0e0b1f]/80 transition-opacity duration-500 ${open ? "opacity-100" : "opacity-0"}`}
+        />
         <button
           type="button"
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setPinned((p) => !p)}
-          className="flex w-full flex-col items-start rounded-[1.6rem] p-6 text-left sm:p-7"
+          className="flex min-h-[17rem] w-full flex-col items-start justify-end rounded-[1.6rem] p-6 text-left sm:p-7"
         >
-          <span className="flex w-full items-start justify-between gap-3">
-            <svg viewBox="0 0 64 64" className="h-14 w-14" fill="none" stroke={glyph.color} strokeWidth="1.6" aria-hidden="true">
-              <circle cx="32" cy="32" r="30" stroke="currentColor" className="text-line" strokeWidth="0.8" />
-              <g style={{ filter: `drop-shadow(0 0 6px ${glyph.color})` }}>{glyph.shape}</g>
-            </svg>
-            <span className="rounded-full border border-line px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-              {open ? ELEMENTS_COPY.close : ELEMENTS_COPY.open}
-            </span>
-          </span>
-          <span lang="sa" className="deva mt-5 block text-[2.1rem] leading-tight text-accent">
+          <span lang="sa" className="deva block text-[2.1rem] leading-tight text-accent">
             {item.devanagari}
           </span>
           <span className="display mt-1 block text-[1.7rem] text-ink">

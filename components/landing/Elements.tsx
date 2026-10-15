@@ -15,7 +15,7 @@ function previewFor(theme: Theme): VersePreview | null {
 /** Scene three: the five elements, each paired with a quality and a verse from the library. */
 export function Elements() {
   return (
-    <section aria-labelledby="elements-title" className="defer-render relative overflow-hidden py-24 sm:py-32">
+    <section id="elements" aria-labelledby="elements-title" className="defer-render relative overflow-hidden py-24 sm:py-32">
       <Container className="max-w-7xl">
         <SectionHeading id="elements-title" eyebrow={ELEMENTS_COPY.eyebrow} title={ELEMENTS_COPY.title} lede={ELEMENTS_COPY.lede} />
         <ul className="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-5">

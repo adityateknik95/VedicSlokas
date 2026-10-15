@@ -1,55 +1,76 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { SignOutButton } from "@/components/auth/SignOutButton";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { Mandala } from "@/components/motifs";
-import { Container, Eyebrow } from "@/components/ui";
-import { requireUser } from "@/lib/session";
+import { Greeting } from "@/components/dashboard/Greeting";
+import { SectionSkeleton } from "@/components/dashboard/Section";
+import { SurpriseLauncher } from "@/components/dashboard/SurpriseLauncher";
+import { FavouritesStrip } from "@/components/dashboard/home/FavouritesStrip";
+import { BrowseByFeeling, ComingSoonRail, ContinueExploring, ProgressSummary } from "@/components/dashboard/home/sections";
+import { TodaySloka } from "@/components/dashboard/home/TodaySloka";
+import { dashboardUser, prefsFor } from "@/lib/dashboard/state";
+import { safeTimeZone } from "@/lib/dashboard/streak";
+import { allSummaries } from "@/lib/dashboard/summaries";
+import { getSlokaOfTheDay } from "@/lib/slokas";
 
-export const metadata: Metadata = { title: "Dashboard", robots: { index: false, follow: false } };
-// Always rendered per request: it depends on who is signed in.
-export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Home" };
 
 /**
- * Placeholder that proves auth works end to end.
- * TODO(payments): show the student's plan and billing once subscriptions exist.
- * TODO(classes): live classes, recordings and notes go here.
- * TODO(favorites): offer to copy this device's saved favorites (localStorage) into the account.
+ * Dashboard home: a greeting, today's sloka, Surprise me, then the student's own things.
+ * Sections that need their data stream in behind same-sized skeletons.
+ * TODO(classes): replace the coming-soon rail entries with live modules as they launch
+ * (flip them in lib/dashboard/modules.ts). TODO(payments): plan and billing summary.
  */
-export default async function DashboardPage() {
-  const { user } = await requireUser("/dashboard");
+export default async function DashboardHome() {
+  const user = await dashboardUser("/dashboard");
+  const prefs = await prefsFor(user.id);
+  if (!prefs.onboardedAt) redirect("/dashboard/welcome");
+
+  const tz = safeTimeZone(prefs.timezone);
+  const now = new Date();
+  const serverHour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: tz }).format(now));
+  const dateLabel = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(now);
   const firstName = user.name.trim().split(/\s+/)[0] || "friend";
 
   return (
-    <div className="temple-bg relative min-h-[80dvh] overflow-hidden pb-16 pt-32 sm:pt-40">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-40 -top-24 h-[34rem] w-[34rem] text-gold opacity-[0.1]">
-        <Mandala variant="simple" className="spin-slow h-full w-full" />
-      </div>
-      <Container className="relative max-w-3xl">
-        <Eyebrow>Your dashboard</Eyebrow>
-        <h1 className="display mt-4 text-5xl text-ink sm:text-6xl">Namaste, {firstName}</h1>
-        <p className="mt-3 text-ink-muted">
-          Signed in as <strong className="break-all text-ink">{user.email}</strong>
-        </p>
+    <div className="dash-page space-y-12">
+      <header className="dash-enter">
+        <Greeting firstName={firstName} serverHour={serverHour} />
+        <p className="mt-2 text-ink-muted">One verse is enough for today. Here is where you left off.</p>
+      </header>
 
-        <section aria-labelledby="plan-title" className="lamp-card card mt-10 p-7 sm:p-9">
-          <h2 id="plan-title" className="display text-3xl text-[var(--lamp-ink)]">
-            No active plan yet
-          </h2>
-          <p className="mt-3 text-[var(--lamp-muted)]">
-            Live classes, recordings and notes will appear here once you join a plan. Until then, the whole library is open to you.
-          </p>
-          <Link
-            href="/library"
-            className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-[#e2bf6a]/50 px-5 text-sm font-semibold text-[var(--lamp-gold)] hover:border-[#f4cf74]"
-          >
-            Explore the library <span aria-hidden="true">→</span>
-          </Link>
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        <TodaySloka sloka={getSlokaOfTheDay(now)} dateLabel={dateLabel} />
+        <section aria-labelledby="surprise-title-home" className="dash-card dash-enter relative flex flex-col justify-between overflow-hidden p-6 sm:p-8" style={{ ["--i" as string]: 1 }}>
+          <Mandala variant="simple" className="spin-slow pointer-events-none absolute -bottom-20 -right-20 h-72 w-72 text-gold opacity-[0.09]" />
+          <div className="relative">
+            <p className="eyebrow">Surprise me</p>
+            <h2 id="surprise-title-home" className="display mt-2 text-3xl leading-tight text-ink">
+              Let a verse find you
+            </h2>
+            <p className="mt-2 max-w-xs text-sm text-ink-muted">One tap, one sloka. We lean towards ones you have not met yet.</p>
+          </div>
+          <div className="relative mt-8">
+            <SurpriseLauncher />
+          </div>
         </section>
+      </div>
 
-        <div className="mt-10 max-w-xs">
-          <SignOutButton />
-        </div>
-      </Container>
+      <Suspense fallback={<SectionSkeleton title="your progress" height="h-[19rem] sm:h-[11.5rem]" />}>
+        <ProgressSummary userId={user.id} />
+      </Suspense>
+
+      <Suspense fallback={<SectionSkeleton title="your recent slokas" height="h-[9.5rem]" />}>
+        <ContinueExploring userId={user.id} />
+      </Suspense>
+
+      <FavouritesStrip summaries={allSummaries()} />
+
+      <BrowseByFeeling />
+
+      <Suspense fallback={<SectionSkeleton title="coming soon" height="h-[16rem]" />}>
+        <ComingSoonRail userId={user.id} />
+      </Suspense>
     </div>
   );
 }

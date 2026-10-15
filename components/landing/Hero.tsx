@@ -88,8 +88,7 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Below md the bottom tab bar covers the last ~5rem, so the cue and pause sit above it. */}
-      <div className="absolute inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-[2] grid md:bottom-5 grid-cols-[1fr_auto] items-end gap-3 px-5 sm:grid-cols-[1fr_auto_1fr] sm:px-8">
+      <div className="absolute inset-x-0 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-[2] grid md:bottom-5 grid-cols-[1fr_auto] items-end gap-3 px-5 sm:grid-cols-[1fr_auto_1fr] sm:px-8">
         <span aria-hidden="true" className="hidden sm:block" />
         <a
           href="#descent"

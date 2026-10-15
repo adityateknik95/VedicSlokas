@@ -1,156 +1,64 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Diya } from "@/components/motifs";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { useFavorites } from "@/lib/favorites";
 import { AccountLink } from "@/components/auth/AccountLink";
 import { AuthSync } from "@/components/auth/AuthSync";
-import { SurpriseButton } from "./SurpriseButton";
 
-type NavKey = "home" | "library" | "favorites" | "translate" | "about";
-
-const icon = "h-[18px] w-[18px] shrink-0";
-const ICONS: Record<NavKey, ReactNode> = {
-  // Temple shikhara
-  home: (
-    <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-      <path d="M12 2.5v1.5M12 4l-4.5 6h9L12 4Z" />
-      <path d="M5.5 10h13M6.5 10v10.5h11V10" />
-      <path d="M10 20.5v-5a2 2 0 0 1 4 0v5M4 20.5h16" />
-    </svg>
-  ),
-  // Stack of palm-leaf manuscripts with a binding cord
-  library: (
-    <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-      <rect x="3" y="4.5" width="18" height="3.5" rx="1.75" />
-      <rect x="3" y="10.25" width="18" height="3.5" rx="1.75" />
-      <rect x="3" y="16" width="18" height="3.5" rx="1.75" />
-      <path d="M8 3v18" />
-    </svg>
-  ),
-  // Lotus
-  favorites: (
-    <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-      <path d="M12 3.5c2.6 2.8 3.6 6.2 0 11-3.6-4.8-2.6-8.2 0-11Z" />
-      <path d="M12 14.5c1.2-3.6 4-6 7.5-6.5-.2 4.4-3 7-7.5 6.5ZM12 14.5c-1.2-3.6-4-6-7.5-6.5.2 4.4 3 7 7.5 6.5Z" />
-      <path d="M5 19c4 2 10 2 14 0" />
-    </svg>
-  ),
-  // Translate: a script letter becoming a Latin "A"
-  translate: (
-    <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-      <path d="M3 5.5h9M7.5 3.5v2M5 5.5c.9 3.2 3.2 5.8 6.5 7.5M10 5.5c-.9 3.2-3.2 5.8-6.5 7.5" />
-      <path d="M12.5 21l4.25-9.5L21 21M14 17.5h5.5" />
-    </svg>
-  ),
-  // Diya
-  about: (
-    <svg viewBox="0 0 24 24" className={icon} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">
-      <path d="M12 3c1.7 2.1 2.1 3.8 0 6.5-2.1-2.7-1.7-4.4 0-6.5Z" />
-      <path d="M3.5 13c1.8 4.8 15.2 4.8 17 0Z" />
-      <path d="M9 19.5h6" />
-    </svg>
-  ),
-};
-
-const NAV: { key: NavKey; href: string; label: string }[] = [
-  { key: "home", href: "/", label: "Home" },
-  { key: "library", href: "/library", label: "Library" },
-  { key: "favorites", href: "/library?favorites=1", label: "Favorites" },
-  { key: "translate", href: "/translate", label: "Translate" },
-  { key: "about", href: "/about", label: "About" },
+/**
+ * The public header says what VedicSlokas is, not what buttons it has: each link opens a part
+ * of the story on the landing page. The tools (library, favourites, translate, surprise)
+ * live in the signed-in dashboard; guests still reach the library from the hero and footer.
+ */
+const NAV: { href: string; label: string }[] = [
+  { href: "/#what-it-is", label: "What it is" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#texts", label: "The texts" },
+  { href: "/#your-space", label: "Your space" },
+  { href: "/about", label: "About" },
 ];
 
-function activeKey(pathname: string, favorites: boolean): NavKey | null {
-  if (pathname === "/") return "home";
-  if (pathname.startsWith("/library")) return favorites ? "favorites" : "library";
-  if (pathname.startsWith("/translate")) return "translate";
-  if (pathname.startsWith("/about")) return "about";
-  return null;
+/**
+ * Scrolls to the landing section a link points at. The browser's own jump is lost on a
+ * fresh load of "/#section" (the page settles after it), and a click on a link to the
+ * hash already in the address bar changes nothing, so the header does it itself.
+ */
+function scrollToSection(href: string) {
+  const at = href.indexOf("#");
+  const id = at === -1 ? "" : href.slice(at + 1);
+  if (id) document.getElementById(decodeURIComponent(id))?.scrollIntoView({ block: "start" });
 }
 
-/** Reads ?favorites=1 so Favorites (a filtered Library view) lights up on its own. */
-function useActiveKey() {
-  const pathname = usePathname();
-  const params = useSearchParams();
-  return activeKey(pathname, params.get("favorites") === "1");
-}
-
-type NavProps = { active: NavKey | null };
+/** On the landing page, section links scroll in place; elsewhere they navigate as usual. */
+const onSectionClick = (pathname: string, href: string) => () => {
+  if (pathname === "/" && href.startsWith("/#")) scrollToSection(href);
+};
 
 /** The shared frosted-gold pill used by both the nav and the action group. */
 const PILL =
   "rounded-full border border-gold/30 bg-bg-2/70 p-1 shadow-[inset_0_1px_0_rgb(243_231_207/0.06),0_12px_40px_-18px_var(--glow)] backdrop-blur-md";
 
-/** Desktop: a floating pill, like a lamp-lit temple corridor. The active tab holds the flame. */
-function DesktopNav({ active }: NavProps) {
-  const { favorites } = useFavorites();
+function DesktopNav({ pathname }: { pathname: string }) {
   return (
-    <ul className={`relative flex items-center gap-0.5 ${PILL}`}>
+    <ul className={`flex items-center gap-0.5 ${PILL}`}>
       {NAV.map((item) => {
-        const on = active === item.key;
+        const on = item.href === pathname;
         return (
-          <li key={item.key}>
+          <li key={item.href}>
             <Link
               href={item.href}
               aria-current={on ? "page" : undefined}
-              title={item.label}
-              className={`group relative flex h-10 items-center gap-2 whitespace-nowrap rounded-full px-3 text-sm font-medium transition-all duration-300 xl:px-4 ${
+              onClick={onSectionClick(pathname, item.href)}
+              className={`relative flex h-10 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors duration-300 ${
                 on
                   ? "bg-gradient-to-b from-saffron/25 to-gold/10 text-accent shadow-[inset_0_0_0_1px_rgb(201_162_75/0.45),0_0_22px_-6px_var(--glow)]"
                   : "text-ink-muted hover:bg-surface-2 hover:text-ink"
               }`}
             >
-              <span className={`transition-transform duration-300 ${on ? "" : "group-hover:-translate-y-px"}`}>{ICONS[item.key]}</span>
-              <span className="sr-only xl:not-sr-only">{item.label}</span>
-              {item.key === "favorites" && favorites.length > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-saffron px-1 text-[0.68rem] font-semibold text-on-saffron">
-                  {favorites.length}
-                  <span className="sr-only"> saved</span>
-                </span>
-              )}
-              {on && (
-                // The flame: a small glowing ember beneath the active tab.
-                <span aria-hidden="true" className="absolute -bottom-[7px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-flame shadow-[0_0_10px_2px_var(--glow)]" />
-              )}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-/** Phones: an app-style dock at the bottom of the screen, within thumb reach. */
-function MobileDock({ active }: NavProps) {
-  const { favorites } = useFavorites();
-  return (
-    <ul className="grid grid-cols-5 gap-0.5 rounded-[1.6rem] border border-gold/30 bg-bg-2/85 p-1.5 shadow-[0_-8px_40px_-12px_rgb(0_0_0/0.5),0_0_30px_-14px_var(--glow)] backdrop-blur-lg">
-      {NAV.map((item) => {
-        const on = active === item.key;
-        return (
-          <li key={item.key}>
-            <Link
-              href={item.href}
-              aria-current={on ? "page" : undefined}
-              className={`relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-[1.2rem] text-[0.64rem] font-medium tracking-wide transition-colors ${
-                on ? "bg-gradient-to-b from-saffron/25 to-gold/10 text-accent shadow-[inset_0_0_0_1px_rgb(201_162_75/0.4)]" : "text-ink-muted active:bg-surface-2"
-              }`}
-            >
-              <span className="relative">
-                {ICONS[item.key]}
-                {item.key === "favorites" && favorites.length > 0 && (
-                  <span className="absolute -right-2.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-saffron px-1 text-[0.6rem] font-semibold text-on-saffron">
-                    {favorites.length}
-                    <span className="sr-only"> saved</span>
-                  </span>
-                )}
-              </span>
               {item.label}
-              {on && <span aria-hidden="true" className="absolute top-1 h-1 w-1 rounded-full bg-flame shadow-[0_0_8px_2px_var(--glow)]" />}
             </Link>
           </li>
         );
@@ -159,17 +67,110 @@ function MobileDock({ active }: NavProps) {
   );
 }
 
-function ActiveDesktopNav() {
-  return <DesktopNav active={useActiveKey()} />;
-}
-function ActiveMobileDock() {
-  return <MobileDock active={useActiveKey()} />;
+/**
+ * Below laptop widths the same links sit behind a menu button, in a panel under the bar.
+ * The panel is rendered by the header itself: the frosted action pill (backdrop-filter)
+ * would otherwise become its containing block and squeeze it to the pill's width.
+ */
+function useCompactMenu() {
+  const [open, setOpen] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      button.current?.focus();
+    };
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!panel.current?.contains(target) && !button.current?.contains(target)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown);
+    };
+  }, [open]);
+
+  return { open, setOpen, button, panel };
 }
 
-export function Header({ slugs }: { slugs: string[] }) {
+type Menu = ReturnType<typeof useCompactMenu>;
+
+function MenuButton({ menu }: { menu: Menu }) {
+  return (
+    <button
+      ref={menu.button}
+      type="button"
+      aria-expanded={menu.open}
+      aria-controls="site-menu"
+      aria-label={menu.open ? "Close menu" : "Open menu"}
+      onClick={() => menu.setOpen((o) => !o)}
+      className="grid h-11 w-11 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink xl:hidden"
+    >
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+        {menu.open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+      </svg>
+    </button>
+  );
+}
+
+function MenuPanel({ menu, pathname }: { menu: Menu; pathname: string }) {
+  return (
+    <div
+      ref={menu.panel}
+      id="site-menu"
+      hidden={!menu.open}
+      className="absolute inset-x-3 top-[calc(var(--nav-h)-0.25rem)] rounded-[1.4rem] border border-gold/30 bg-bg-2/95 p-2 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.6)] backdrop-blur-lg sm:left-auto sm:right-6 sm:w-72 xl:hidden"
+    >
+      <nav aria-label="Primary">
+        <ul>
+          {NAV.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                aria-current={item.href === pathname ? "page" : undefined}
+                onClick={() => {
+                  menu.setOpen(false);
+                  onSectionClick(pathname, item.href)();
+                }}
+                className="flex min-h-12 items-center rounded-xl px-4 text-base text-ink hover:bg-surface-2 aria-[current=page]:text-accent"
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+}
+
+export function Header() {
   const pathname = usePathname();
-  const fallbackActive = activeKey(pathname, false);
+  const menu = useCompactMenu();
   const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    let timer = 0;
+    // After load: until then the hydrating router and late layout (fonts, the descent stage)
+    // undo or shift an earlier jump.
+    const go = () => {
+      timer = window.setTimeout(() => scrollToSection(hash), 60);
+    };
+    if (document.readyState === "complete") go();
+    else window.addEventListener("load", go, { once: true });
+    return () => {
+      window.removeEventListener("load", go);
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -179,50 +180,40 @@ export function Header({ slugs }: { slugs: string[] }) {
   }, []);
 
   return (
-    <>
-      <header
-        className={`fixed inset-x-0 top-0 z-50 transition-[background-color,backdrop-filter] duration-500 ${
-          scrolled ? "bg-bg/75 backdrop-blur-md" : ""
-        }`}
-      >
-        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-saffron focus:px-4 focus:py-2 focus:text-on-saffron">
-          Skip to content
-        </a>
-        <div className="mx-auto grid h-[var(--nav-h)] max-w-[88rem] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
-          <Link href="/" className="flex min-h-11 items-center gap-2.5 justify-self-start rounded-full" aria-label="VedicSlokas home">
-            <Diya className="h-9 w-9" />
-            <span className="display text-2xl tracking-wide text-ink">
-              Vedic<span className="text-accent">Slokas</span>
-            </span>
-          </Link>
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,backdrop-filter] duration-500 ${
+        scrolled ? "bg-bg/75 backdrop-blur-md" : ""
+      }`}
+    >
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[80] focus:rounded-full focus:bg-saffron focus:px-4 focus:py-2 focus:text-on-saffron">
+        Skip to content
+      </a>
+      <div className="mx-auto grid h-[var(--nav-h)] max-w-[88rem] grid-cols-[1fr_auto] items-center gap-3 px-4 sm:px-6 xl:grid-cols-[1fr_auto_1fr] lg:px-8">
+        <Link href="/" className="flex min-h-11 items-center gap-2.5 justify-self-start rounded-full" aria-label="VedicSlokas home">
+          <Diya className="h-9 w-9" />
+          <span className="display text-2xl tracking-wide text-ink">
+            Vedic<span className="text-accent">Slokas</span>
+          </span>
+        </Link>
 
-          <nav aria-label="Primary" className="hidden md:block">
-            <Suspense fallback={<DesktopNav active={fallbackActive} />}>
-              <ActiveDesktopNav />
-            </Suspense>
-          </nav>
+        <nav aria-label="Primary" className="hidden xl:block">
+          <DesktopNav pathname={pathname} />
+        </nav>
 
-          {/* Actions share one pill that mirrors the nav: two quiet icon buttons, one highlighted action. */}
-          <div className={`flex items-center gap-0.5 justify-self-end ${PILL}`}>
-            <SurpriseButton slugs={slugs} />
-            <ThemeToggle />
-            <span aria-hidden="true" className="mx-1 h-6 w-px bg-line" />
-            <AccountLink />
-            <AuthSync />
-          </div>
+        <div className={`flex items-center gap-0.5 justify-self-end ${PILL}`}>
+          <ThemeToggle />
+          <span aria-hidden="true" className="mx-1 h-6 w-px bg-line" />
+          <AccountLink />
+          <AuthSync />
+          <MenuButton menu={menu} />
         </div>
-        {/* Gold hairline that appears once the page scrolls under the bar. */}
-        <div
-          aria-hidden="true"
-          className={`h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent transition-opacity duration-500 ${scrolled ? "opacity-100" : "opacity-0"}`}
-        />
-      </header>
-
-      <nav aria-label="Primary" className="fixed inset-x-3 bottom-3 z-50 pb-[env(safe-area-inset-bottom)] md:hidden">
-        <Suspense fallback={<MobileDock active={fallbackActive} />}>
-          <ActiveMobileDock />
-        </Suspense>
-      </nav>
-    </>
+      </div>
+      <MenuPanel menu={menu} pathname={pathname} />
+      {/* Gold hairline that appears once the page scrolls under the bar. */}
+      <div
+        aria-hidden="true"
+        className={`h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent transition-opacity duration-500 ${scrolled ? "opacity-100" : "opacity-0"}`}
+      />
+    </header>
   );
 }

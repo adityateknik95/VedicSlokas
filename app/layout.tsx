@@ -5,8 +5,8 @@ import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ClientExtras } from "@/components/layout/ClientExtras";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { MotionProvider } from "@/components/motion/MotionProvider";
-import { slokas } from "@/lib/slokas";
 import { site } from "@/lib/site";
 
 // Font budget matters on phones (most visitors). See assets/fonts/README.md.
@@ -69,11 +69,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh pb-24 md:pb-0">
         <MotionProvider>
-          <Header slugs={slokas.map((s) => s.slug)} />
-          <main id="main" tabIndex={-1} className="outline-none">
+          <SiteChrome header={<Header />} footer={<Footer />}>
             {children}
-          </main>
-          <Footer />
+          </SiteChrome>
           <ClientExtras />
         </MotionProvider>
       </body>

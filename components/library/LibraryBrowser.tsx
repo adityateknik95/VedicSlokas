@@ -6,13 +6,18 @@ import { SOURCES, THEMES, deities, filterSlokas, slokas, themeInfo } from "@/lib
 import type { Source, Theme } from "@/lib/types";
 import { useFavorites } from "@/lib/favorites";
 import { SEARCH_INPUT_ID } from "@/components/layout/KeyboardShortcuts";
-import { SlokaCard } from "./SlokaCard";
+import { SlokaCard, type CardBadge } from "./SlokaCard";
+
+type Props = {
+  /** Inside the dashboard: account-aware copy and "new to you" / learned badges. */
+  account?: { viewed: string[]; learned: string[] };
+};
 
 const chip =
   "inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors aria-pressed:border-saffron aria-pressed:bg-saffron aria-pressed:text-on-saffron";
 const chipIdle = "border-line text-ink-muted hover:border-gold hover:text-ink";
 
-export function LibraryBrowser() {
+export function LibraryBrowser({ account }: Props = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -55,6 +60,11 @@ export function LibraryBrowser() {
   }, [q, source, theme, deity, favOnly, favorites]);
 
   const active = Boolean(q || source || theme || deity || favOnly);
+  const viewed = useMemo(() => new Set(account?.viewed), [account]);
+  const learned = useMemo(() => new Set(account?.learned), [account]);
+  const badgeFor = (slug: string): CardBadge | undefined => (!account ? undefined : learned.has(slug) ? "learned" : viewed.has(slug) ? undefined : "new");
+  const favLabel = account ? "Favourites" : "Favorites";
+  const chipSize = account ? "min-h-11" : "";
 
   return (
     <div>
@@ -85,25 +95,25 @@ export function LibraryBrowser() {
 
       {/* Filters */}
       <div className="mt-8 space-y-4">
-        <fieldset>
+        <fieldset className="min-w-0">
           <legend className="eyebrow mb-3">Source</legend>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-            <button type="button" aria-pressed={!source} onClick={() => setParam({ source: null })} className={`${chip} ${chipIdle}`}>
+            <button type="button" aria-pressed={!source} onClick={() => setParam({ source: null })} className={`${chip} ${chipIdle} ${chipSize}`}>
               All
             </button>
             {SOURCES.map((s) => (
-              <button key={s} type="button" aria-pressed={source === s} onClick={() => setParam({ source: source === s ? null : s })} className={`${chip} ${chipIdle}`}>
+              <button key={s} type="button" aria-pressed={source === s} onClick={() => setParam({ source: source === s ? null : s })} className={`${chip} ${chipIdle} ${chipSize}`}>
                 {s}
               </button>
             ))}
           </div>
         </fieldset>
 
-        <fieldset>
+        <fieldset className="min-w-0">
           <legend className="eyebrow mb-3">Theme</legend>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
             {THEMES.map((t) => (
-              <button key={t} type="button" aria-pressed={theme === t} onClick={() => setParam({ theme: theme === t ? null : t })} className={`${chip} ${chipIdle}`}>
+              <button key={t} type="button" aria-pressed={theme === t} onClick={() => setParam({ theme: theme === t ? null : t })} className={`${chip} ${chipIdle} ${chipSize}`}>
                 <span className="deva mr-2 text-base leading-none" lang="sa" aria-hidden="true">
                   {themeInfo[t].devanagari}
                 </span>
@@ -137,7 +147,8 @@ export function LibraryBrowser() {
               <path d="M12 3c2.6 2.8 3.6 6.2 0 11-3.6-4.8-2.6-8.2 0-11Z" />
               <path d="M12 14c1.2-3.6 4-6 7.5-6.5-.2 4.4-3 7-7.5 6.5ZM12 14c-1.2-3.6-4-6-7.5-6.5.2 4.4 3 7 7.5 6.5Z" />
             </svg>
-            Favorites{favorites.length ? ` (${favorites.length})` : ""}
+            {favLabel}
+            {favorites.length ? ` (${favorites.length})` : ""}
           </button>
           {active && (
             <button
@@ -163,7 +174,7 @@ export function LibraryBrowser() {
         <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
           {results.map((s, i) => (
             <li key={s.slug}>
-              <SlokaCard sloka={s} index={i} />
+              <SlokaCard sloka={s} index={i} badge={badgeFor(s.slug)} />
             </li>
           ))}
         </ul>
@@ -172,10 +183,12 @@ export function LibraryBrowser() {
           <p className="deva text-3xl text-accent" lang="sa">
             शून्यम्
           </p>
-          <p className="display mt-3 text-2xl text-ink">{favOnly && !favorites.length ? "No favorites yet" : "Nothing found"}</p>
+          <p className="display mt-3 text-2xl text-ink">{favOnly && !favorites.length ? `No ${favLabel.toLowerCase()} yet` : "Nothing found"}</p>
           <p className="mx-auto mt-2 max-w-sm text-sm text-ink-muted">
             {favOnly && !favorites.length
-              ? "Tap the lotus on any sloka to keep it here. Favorites stay on this device."
+              ? account
+                ? "Tap the lotus on any sloka to keep it here. Your favourites follow you to every device."
+                : "Tap the lotus on any sloka to keep it here. Favorites stay on this device."
               : "Try a simpler word, an English meaning, or clear a filter."}
           </p>
         </div>

@@ -10,7 +10,7 @@ import type { Theme } from "./types";
 export const META = {
   title: "VedicSlokas: From the universe, to you",
   description:
-    "A journey from the cosmos to the self through the oldest words humanity has. Read Sanskrit slokas with meanings, word by word, and find a verse for how you feel today.",
+    "A journey from the cosmos to the self through the oldest words humanity has. Read Sanskrit slokas from the Vedas, Upaniṣads, Bhagavad Gītā and stotras, with meanings word by word.",
   ogAlt: "VedicSlokas: From the universe, to you",
 };
 
@@ -86,8 +86,6 @@ export const ELEMENTS_COPY = {
   eyebrow: "Pañcabhūta · the five elements",
   title: "What you are made of",
   lede: "Five elements build the world, and they build you too. Each one holds a quality worth growing.",
-  open: "Open",
-  close: "Close",
   more: (quality: string) => `More verses on ${quality.toLowerCase()}`,
   items: [
     { key: "space", name: "Ākāśa", devanagari: "आकाश", english: "Space", theme: "knowledge", quality: "Knowledge", line: "Space makes room for everything. A clear mind makes room to learn." },
@@ -98,26 +96,41 @@ export const ELEMENTS_COPY = {
   ] satisfies ElementCopy[],
 };
 
-export const MOOD_COPY = {
-  eyebrow: "Find your verse",
-  title: "How are you feeling right now?",
-  lede: "Pick one. We will find a verse for this moment.",
-  legend: "Choose how you feel",
-  options: {
-    courage: "I need courage",
-    peace: "I want some peace",
-    knowledge: "I feel curious",
-    devotion: "I feel devoted",
-    focus: "I need focus",
-    gratitude: "I feel grateful",
-  } satisfies Record<Theme, string>,
-  empty: "Your verse will appear here.",
-  another: "Another one",
-  readFull: "Read the full sloka",
-  storyImage: "Story image",
-  storyDialogTitle: "Share it as a story",
-  closeDialog: "Close",
-  announce: (feeling: string, title: string) => `${feeling}. Here is a verse: ${title}.`,
+export const WHAT_COPY = {
+  eyebrow: "What VedicSlokas is",
+  title: "Sanskrit verses you can understand",
+  lede: "A free library of verses from the Vedas, the Upaniṣads, the Bhagavad Gītā and the stotras. Each one is explained word by word, so you see what it says and how it says it.",
+  facts: (slokas: number, texts: number, themes: number) => [`${slokas} slokas`, `${texts} texts`, `${themes} themes`, "Free to read, no account needed"],
+  cards: [
+    {
+      title: "What a sloka is",
+      body: "In everyday use, a sloka is any Sanskrit verse. Strictly, it is a verse in the anuṣṭubh metre: four quarters of eight syllables each. Either way, it was made to be heard and remembered.",
+    },
+    {
+      title: "Who it is for",
+      body: "Anyone curious. You may have grown up hearing these verses without knowing what they meant, or you may be meeting them for the first time. You need no Sanskrit to begin.",
+    },
+    {
+      title: "Why it exists",
+      body: "For more than three thousand years these verses travelled by voice, from teacher to student. VedicSlokas is one more lamp in that line, lit for a generation that reads on phones.",
+    },
+  ],
+};
+
+export const HOW_COPY = {
+  eyebrow: "How it works",
+  title: "Four layers to every verse",
+  lede: "Every sloka page builds the meaning up one layer at a time. Here is how it looks for a single verse.",
+  layers: [
+    { title: "The verse as written", body: "In Devanagari, the script Sanskrit is most often written in." },
+    { title: "How it sounds", body: "In IAST, which writes every Sanskrit sound with exactly one Roman letter or mark." },
+    { title: "Word by word", body: "Each word taken apart, so you can see how the meaning is built." },
+    { title: "What it says", body: "A plain translation, the exact reference, and a note on where the verse sits in its text." },
+  ],
+  trustTitle: "Exact, or not at all",
+  trustBody: "Every verse carries a precise reference. Each one is checked against a trusted edition before it is marked verified; until then its page says so. Translations are our own and aim for clarity.",
+  trustLink: "How we choose and check verses",
+  more: "and more",
 };
 
 export const STREAMS_COPY = {

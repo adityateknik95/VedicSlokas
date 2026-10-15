@@ -103,3 +103,28 @@ export function noAccountEmail({ signupUrl, email }: { signupUrl: string; email:
     ].join("\n"),
   };
 }
+
+export function accountDeletedEmail({ name, siteUrl }: { name: string; siteUrl: string }): EmailContent {
+  const subject = "Your VedicSlokas account has been deleted";
+  const first = escapeHtml(name.trim().split(/\s+/)[0] || "there");
+  return {
+    subject,
+    html: layout({
+      preheader: "Your account and everything saved in it are gone. Thank you for reading with us.",
+      heading: "Your account is deleted",
+      body: `Namaste ${first}. As you asked, we deleted your VedicSlokas account just now: your profile, favourites, progress, preferences and every signed-in device.<br>The library stays open to everyone, any time you want to come back.`,
+      cta: { label: "Visit VedicSlokas", url: siteUrl },
+      footnote: "If you didn't ask for this, someone signed in to your account and deleted it. Reply to this email and tell us.",
+    }),
+    text: [
+      "Your VedicSlokas account has been deleted",
+      "",
+      `Namaste ${name.trim().split(/\s+/)[0] || "there"}.`,
+      "As you asked, we deleted your account just now: your profile, favourites, progress, preferences and every signed-in device.",
+      "The library stays open to everyone, any time you want to come back:",
+      siteUrl,
+      "",
+      "If you didn't ask for this, someone signed in to your account and deleted it. Reply to this email and tell us.",
+    ].join("\n"),
+  };
+}

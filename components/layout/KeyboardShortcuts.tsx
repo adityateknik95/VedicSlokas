@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export const SEARCH_INPUT_ID = "sloka-search";
 
-/** "/" focuses the library search from anywhere on the site. */
+/** "/" focuses the library search from anywhere on the site (the in-app library inside the dashboard). */
 export function KeyboardShortcuts() {
   const router = useRouter();
+  const pathname = usePathname();
+  const inApp = pathname === "/dashboard" || pathname.startsWith("/dashboard/");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -19,11 +21,11 @@ export function KeyboardShortcuts() {
         input.focus();
         input.select();
       } else {
-        router.push("/library?focus=search");
+        router.push(inApp ? "/dashboard/library?focus=search" : "/library?focus=search");
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [router]);
+  }, [router, inApp]);
   return null;
 }

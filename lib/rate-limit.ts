@@ -20,6 +20,14 @@ export const RULES = {
   confirmByIp: { limit: 30, windowSec: 10 * 60 },
   /** Status polls from the "check your inbox" page per IP. */
   statusByIp: { limit: 240, windowSec: 10 * 60 },
+  /** Dashboard writes (favourites, learned, prefs, interest) per user. */
+  meWriteByUser: { limit: 120, windowSec: 60 },
+  /** Sloka views recorded per user. */
+  meViewByUser: { limit: 300, windowSec: 10 * 60 },
+  /** Data exports per user. */
+  meExportByUser: { limit: 5, windowSec: 60 * 60 },
+  /** Account deletion and "sign out everywhere" attempts per user. */
+  meAccountByUser: { limit: 10, windowSec: 60 * 60 },
 } as const satisfies Record<string, Rule>;
 
 export type RuleName = keyof typeof RULES;
