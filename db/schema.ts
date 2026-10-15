@@ -207,3 +207,27 @@ export const featureInterest = pgTable(
 export type UserRole = (typeof userRole.enumValues)[number];
 export type Feature = (typeof FEATURES)[number];
 export type AuditEvent = (typeof auditEvent.enumValues)[number];
+
+
+/** Customer-selected plan and current entitlement state. */
+export const studentPlanStatus = pgEnum("student_plan_status", ["trial", "pending", "active", "expired"]);
+export const studentPlan = pgTable("student_plan", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  status: studentPlanStatus("status").notNull().default("trial"),
+  trialStartedAt: timestamp("trial_started_at", { withTimezone: true }),
+  subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
+  subscriptionExpiresAt: timestamp("subscription_expires_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const paymentStatus = pgEnum("payment_status", ["pending", "verified", "rejected"]);
+export const subscriptionPayment = pgTable("subscription_payment", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  amountPaise: integer("amount_paise").notNull().default(7900),
+  mode: text("mode").notNull(),
+  utr: text("utr").notNull(),
+  status: paymentStatus("status").notNull().default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  verifiedAt: timestamp("verified_at", { withTimezone: true }),
+}, (t) => [index("subscription_payment_user_idx").on(t.userId), index("subscription_payment_status_idx").on(t.status)]);

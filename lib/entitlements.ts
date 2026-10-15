@@ -1,15 +1,12 @@
 import "server-only";
+import { eq } from "drizzle-orm";
+import { getDb, schema } from "@/db";
 import { NO_ENTITLEMENTS, type Entitlements } from "@/lib/dashboard/modules";
 
-/**
- * What a student has paid for. Today nothing is sold, so everything is false and every
- * paid module shows as "coming soon" (or locked, once its status flips to "live").
- *
- * TODO(subscriptions): read the student's active plan (e.g. a `subscription` table kept in
- * sync by the payment provider's webhook) and map it to these flags. Keep this the only
- * place that decides access, so pages and navigation never check plans themselves.
- */
+/** Paid modules are entitled only while the server-side subscription is active and unexpired. */
 export async function getEntitlements(userId: string): Promise<Entitlements> {
-  void userId;
-  return { ...NO_ENTITLEMENTS };
+  const db = await getDb();
+  const [plan] = await db.select().from(schema.studentPlan).where(eq(schema.studentPlan.userId, userId)).limit(1);
+  const active = plan?.status === "active" && !!plan.subscriptionExpiresAt && plan.subscriptionExpiresAt > new Date();
+  return active ? { liveClasses: true, notes: true, courses: true } : { ...NO_ENTITLEMENTS };
 }

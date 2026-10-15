@@ -276,3 +276,38 @@ Tests:
 - Announcements: the bell is a placeholder.
 - The daily email: only the preference is stored. There is no sender yet.
 - Push notifications, an admin panel and a native app.
+
+
+## Upgrade plans and manual payment UI
+
+The signed-in dashboard has an **Upgrade** link next to the profile menu. `/dashboard/upgrade` displays a free trial limited in its plan description to 7 slokas and a ₹79/month plan. The subscription checkout offers two manual methods: PhonePe/UPI QR and bank transfer. No Razorpay or other payment gateway is used.
+
+Before publishing, set `NEXT_PUBLIC_UPI_ID` and `NEXT_PUBLIC_UPI_NAME` plus `NEXT_PUBLIC_BANK_ACCOUNT_HOLDER`, `NEXT_PUBLIC_BANK_NAME`, `NEXT_PUBLIC_BANK_ACCOUNT`, and `NEXT_PUBLIC_BANK_IFSC` in your local/Vercel environment. A QR is generated from the configured UPI ID. Do not add real bank details to a committed `.env` file.
+
+**Important:** this change provides the upgrade and payment-selection UI only. It does not automatically grant a subscription, enforce the 7-sloka trial limit, store transaction references, or verify payments. Those require a secure server-side workflow and admin verification before the site should accept real payments.
+
+## Subscription plans and manual payment verification
+
+The dashboard includes a server-stored plan state (`trial`, `pending`, `active`, `expired`). The free-trial choice is recorded once per account. The dashboard library is limited to seven selected slokas unless the customer's monthly subscription is active.
+
+### Configure manual payments
+
+Set the following environment variables in `.env.local` for development and in the Vercel project's Environment Variables for production. Use your own real details only:
+
+- `NEXT_PUBLIC_UPI_ID`
+- `NEXT_PUBLIC_UPI_NAME`
+- `NEXT_PUBLIC_BANK_ACCOUNT_HOLDER`
+- `NEXT_PUBLIC_BANK_NAME`
+- `NEXT_PUBLIC_BANK_ACCOUNT`
+- `NEXT_PUBLIC_BANK_IFSC`
+
+The UPI QR and UPI deep link request exactly ₹79. PhonePe/Google Pay do not send a payment notification to this website just because the customer opens the app; the customer enters the UTR/reference after paying. A payment remains `pending` until an admin checks the bank/UPI statement and verifies it.
+
+### Database and admin verification
+
+- For local PGlite, the new migration is applied automatically at app startup.
+- For Neon/production, run `npm run db:migrate` after setting `DATABASE_URL`.
+- Give the appropriate existing user the `admin` role in the database. The admin payment review page is `/admin/payments`.
+- An admin must compare the UTR with the actual bank/UPI statement before clicking **Verify payment & activate**. Approval grants one month of subscription status. Never approve solely because a customer submitted a reference.
+
+The app does not collect card numbers or CVCs. A real card checkout must be handled by a compliant payment processor, not by custom fields in this app. Also note that the existing Live Classes, Notes and Courses pages are still marked “Coming soon” in the project; subscription status can be activated, but those learning modules need their actual class/PDF/course content implemented before they can provide it.

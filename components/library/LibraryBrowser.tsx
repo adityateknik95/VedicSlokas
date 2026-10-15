@@ -11,13 +11,15 @@ import { SlokaCard, type CardBadge } from "./SlokaCard";
 type Props = {
   /** Inside the dashboard: account-aware copy and "new to you" / learned badges. */
   account?: { viewed: string[]; learned: string[] };
+  /** Server-computed sloka allow-list for free-trial dashboard accounts. */
+  allowedSlugs?: string[];
 };
 
 const chip =
   "inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors aria-pressed:border-saffron aria-pressed:bg-saffron aria-pressed:text-on-saffron";
 const chipIdle = "border-line text-ink-muted hover:border-gold hover:text-ink";
 
-export function LibraryBrowser({ account }: Props = {}) {
+export function LibraryBrowser({ account, allowedSlugs }: Props = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -55,9 +57,10 @@ export function LibraryBrowser({ account }: Props = {}) {
   }, [params]);
 
   const results = useMemo(() => {
-    const list = filterSlokas({ q, source, theme, deity });
+    let list = filterSlokas({ q, source, theme, deity });
+    if (allowedSlugs) { const allowed = new Set(allowedSlugs); list = list.filter((s) => allowed.has(s.slug)); }
     return favOnly ? list.filter((s) => favorites.includes(s.slug)) : list;
-  }, [q, source, theme, deity, favOnly, favorites]);
+  }, [q, source, theme, deity, favOnly, favorites, allowedSlugs]);
 
   const active = Boolean(q || source || theme || deity || favOnly);
   const viewed = useMemo(() => new Set(account?.viewed), [account]);
@@ -92,6 +95,8 @@ export function LibraryBrowser({ account }: Props = {}) {
           /
         </kbd>
       </div>
+
+      {allowedSlugs && <div className="mt-5 rounded-2xl border border-gold/50 bg-gold/10 p-4 text-sm leading-6 text-ink">Free Trial mode: your dashboard library is limited to 7 selected slokas. <a href="/dashboard/upgrade" className="font-semibold underline underline-offset-4">Upgrade for full access</a>.</div>}
 
       {/* Filters */}
       <div className="mt-8 space-y-4">

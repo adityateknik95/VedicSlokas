@@ -12,6 +12,7 @@ import { dashboardUser, prefsFor } from "@/lib/dashboard/state";
 import { safeTimeZone } from "@/lib/dashboard/streak";
 import { allSummaries } from "@/lib/dashboard/summaries";
 import { getSlokaOfTheDay } from "@/lib/slokas";
+import { getPlanState } from "@/lib/subscriptions";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -23,7 +24,7 @@ export const metadata: Metadata = { title: "Home" };
  */
 export default async function DashboardHome() {
   const user = await dashboardUser("/dashboard");
-  const prefs = await prefsFor(user.id);
+  const [prefs, plan] = await Promise.all([prefsFor(user.id), getPlanState(user.id)]);
   if (!prefs.onboardedAt) redirect("/dashboard/welcome");
 
   const tz = safeTimeZone(prefs.timezone);
@@ -38,6 +39,11 @@ export default async function DashboardHome() {
         <Greeting firstName={firstName} serverHour={serverHour} />
         <p className="mt-2 text-ink-muted">One verse is enough for today. Here is where you left off.</p>
       </header>
+
+      <section className="dash-card flex flex-wrap items-center justify-between gap-4 p-5">
+        <div><p className="eyebrow">Your plan</p><p className="mt-1 font-semibold text-ink">{plan.status === "active" ? (plan.payment?.status === "verified" ? "Payment transaction completed · Subscription active" : "Monthly Subscription · Full access") : plan.status === "trial" ? "Free Trial · Up to 7 slokas" : plan.status === "pending" ? "Payment pending verification" : "Free access · Choose a plan"}</p><p className="mt-1 text-sm text-ink-muted">{plan.status === "active" ? `Subscription valid until ${new Date(plan.subscriptionExpiresAt!).toLocaleDateString("en-IN")}` : plan.status === "pending" ? "Your full subscription starts after the payment is verified." : "Upgrade any time for the complete learning library."}</p></div>
+        <a href="/dashboard/upgrade" className="inline-flex min-h-11 items-center rounded-full bg-gold px-5 text-sm font-bold text-[#24170b]">{plan.status === "active" ? "Manage plan" : "Upgrade plan"}</a>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
         <TodaySloka sloka={getSlokaOfTheDay(now)} dateLabel={dateLabel} />

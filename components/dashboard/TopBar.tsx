@@ -97,6 +97,18 @@ export function TopBar({ user }: { user: ShellUser }) {
           )}
         </Popover>
 
+        <Link
+          href="/dashboard/upgrade"
+          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-gold/60 bg-gold/10 px-3 text-sm font-semibold text-ink transition-colors hover:bg-gold/20 sm:px-4"
+          aria-label="Upgrade your VedicSlokas plan"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4 text-accent" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2L12 3Z" />
+            <path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" />
+          </svg>
+          <span>Upgrade</span>
+        </Link>
+
         <Popover label={`Account menu for ${user.name}`} panelClassName="w-72 p-2" button={<Avatar name={user.name} image={user.image} size="sm" />}>
           {(close) => (
             <div>
