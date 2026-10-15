@@ -28,6 +28,10 @@ export const RULES = {
   meExportByUser: { limit: 5, windowSec: 60 * 60 },
   /** Account deletion and "sign out everywhere" attempts per user. */
   meAccountByUser: { limit: 10, windowSec: 60 * 60 },
+  /** Payment reports per user (a real one is monthly; this only stops floods). */
+  mePaymentByUser: { limit: 5, windowSec: 60 * 60 },
+  /** Payment reviews per admin. */
+  adminReviewByUser: { limit: 120, windowSec: 60 },
 } as const satisfies Record<string, Rule>;
 
 export type RuleName = keyof typeof RULES;

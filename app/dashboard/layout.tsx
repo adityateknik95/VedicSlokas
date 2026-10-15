@@ -5,6 +5,8 @@ import { AccountSync } from "@/components/dashboard/AccountSync";
 import { DashFrame } from "@/components/dashboard/DashFrame";
 import { SIDEBAR_COOKIE } from "@/lib/dashboard/shell";
 import { dashboardUser, favouritesFor, prefsFor } from "@/lib/dashboard/state";
+import { hasRole } from "@/lib/session";
+import { canUseSubscriptions } from "@/lib/subscriptions";
 
 export const metadata: Metadata = { title: { default: "Dashboard", template: "%s · Dashboard · VedicSlokas" }, robots: { index: false, follow: false }, alternates: { canonical: null } };
 // Per request: everything here depends on who is signed in.
@@ -20,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <DashFrame
-      user={{ name: user.name, email: user.email, image: user.image ?? null }}
+      user={{ name: user.name, email: user.email, image: user.image ?? null, plan: canUseSubscriptions(user), admin: hasRole(user, ["admin"]) }}
       initiallyCollapsed={jar.get(SIDEBAR_COOKIE)?.value === "collapsed"}
       reduceMotion={prefs.motion === "reduce"}
     >

@@ -1,12 +1,13 @@
 import "server-only";
-import { eq } from "drizzle-orm";
-import { getDb, schema } from "@/db";
 import { NO_ENTITLEMENTS, type Entitlements } from "@/lib/dashboard/modules";
+import { hasActiveSubscription } from "@/lib/subscriptions";
 
-/** Paid modules are entitled only while the server-side subscription is active and unexpired. */
+/**
+ * What a student has paid for: the only place that decides access, so pages and navigation
+ * never check plans themselves. Verses are free for everyone; the monthly plan unlocks the
+ * learning modules. While a module's status is "soon" it still shows as coming soon.
+ */
 export async function getEntitlements(userId: string): Promise<Entitlements> {
-  const db = await getDb();
-  const [plan] = await db.select().from(schema.studentPlan).where(eq(schema.studentPlan.userId, userId)).limit(1);
-  const active = plan?.status === "active" && !!plan.subscriptionExpiresAt && plan.subscriptionExpiresAt > new Date();
-  return active ? { liveClasses: true, notes: true, courses: true } : { ...NO_ENTITLEMENTS };
+  if (!(await hasActiveSubscription(userId))) return { ...NO_ENTITLEMENTS };
+  return { liveClasses: true, notes: true, courses: true };
 }

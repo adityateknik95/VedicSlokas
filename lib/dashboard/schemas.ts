@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FEATURES } from "@/db/schema";
+import { FEATURES, PAYMENT_MODES } from "@/db/schema";
 import { isSlokaSlug } from "@/lib/slokas";
 import { THEMES } from "@/lib/types";
 import { safeTimeZone } from "./streak";
@@ -40,3 +40,7 @@ export const profileBody = z
   })
   .strict();
 export const deleteBody = z.object({ confirm: z.literal("DELETE") }).strict();
+
+/** A reported manual payment. The reference is normalised and checked in lib/subscriptions. */
+export const paymentBody = z.object({ mode: z.enum(PAYMENT_MODES), reference: z.string().max(60) }).strict();
+export const reviewBody = z.object({ paymentId: z.uuid(), approve: z.boolean() }).strict();

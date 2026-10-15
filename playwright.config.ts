@@ -39,6 +39,11 @@ export default defineConfig({
       PGLITE_DIR: ".pglite-e2e",
       BETTER_AUTH_URL: `http://localhost:${PORT}`,
       NEXT_PUBLIC_SITE_URL: `http://localhost:${PORT}`,
+      // The paid plan in testing mode, with placeholder payment details used only here.
+      SUBSCRIPTIONS: "testers",
+      SUBSCRIPTION_TESTERS: "plan.tester@example.com",
+      PAYMENT_UPI_ID: "e2e-test@upi",
+      PAYMENT_UPI_NAME: "E2E Test",
     },
   },
 });

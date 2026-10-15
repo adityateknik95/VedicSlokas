@@ -1,191 +1,257 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useId, useState } from "react";
+import { MeError, failureMessage, meFetch } from "@/lib/dashboard/client";
+import type { PaymentDetails, Plan } from "@/lib/subscriptions";
+import { toast } from "@/lib/toast";
 
-type PaymentMode = "upi" | "bank";
+type Mode = "upi" | "bank";
 
-const UPI_ID = process.env.NEXT_PUBLIC_UPI_ID ?? "";
-const UPI_NAME = process.env.NEXT_PUBLIC_UPI_NAME ?? "VedicSlokas";
-const BANK_NAME = process.env.NEXT_PUBLIC_BANK_NAME ?? "";
-const BANK_ACCOUNT = process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "";
-const BANK_IFSC = process.env.NEXT_PUBLIC_BANK_IFSC ?? "";
-const BANK_HOLDER = process.env.NEXT_PUBLIC_BANK_ACCOUNT_HOLDER ?? UPI_NAME;
+const FREE = ["Every sloka, word by word", "Favourites, progress and your streak", "Sloka of the Day and Surprise me"];
+/** Be honest about what exists: the learning modules are still being prepared. */
+const PAID: { label: string; soon?: boolean }[] = [
+  { label: "Everything in Free" },
+  { label: "Live classes (coming soon)", soon: true },
+  { label: "PDF study notes (coming soon)", soon: true },
+  { label: "Courses (coming soon)", soon: true },
+];
 
-function StepMark({ number, active }: { number: number; active: boolean }) {
-  return <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full border text-sm font-semibold ${active ? "border-gold bg-gold text-[#24170b]" : "border-line text-ink-muted"}`}>{number}</span>;
+const ERRORS: Record<string, string> = {
+  invalid_reference: "That reference doesn't look right. Use the 12 digit UTR from your UPI app, or your bank's transaction reference.",
+  already_pending: "You already have a payment waiting to be checked. We'll update your plan as soon as it is.",
+  reference_used: "That transaction reference has already been submitted.",
+};
+
+const date = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+
+function Tick({ soon }: { soon?: boolean }) {
+  return (
+    <span aria-hidden="true" className={soon ? "text-ink-muted" : "text-accent"}>
+      {soon ? "○" : "✓"}
+    </span>
+  );
 }
 
-export function UpgradeFlow() {
+function Status({ plan }: { plan: Plan }) {
+  let title = "Free";
+  let body = "Every verse is yours to read. The monthly plan adds the learning modules as they open.";
+  if (plan.active && plan.expiresAt) {
+    title = "Monthly plan · active";
+    body = `Active until ${date(plan.expiresAt)}. Paying again adds another month after that.`;
+  }
+  if (plan.pending) {
+    if (!plan.active) title = "Payment being checked";
+    body = `We received your reference ${plan.pending.reference} and are matching it with our statement. We'll update your plan as soon as we find it.`;
+  } else if (!plan.active && plan.lastReviewed?.status === "rejected") {
+    title = "We couldn't find your payment";
+    body = "Your last reference didn't match a payment in our statement. If you did pay, send the correct reference below.";
+  }
+  return (
+    <div role="status" className="dash-card p-5 sm:p-6">
+      <p className="eyebrow">Your plan</p>
+      <p className="display mt-2 text-2xl text-ink">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-ink-muted">{body}</p>
+    </div>
+  );
+}
+
+/** Free and monthly side by side, then how to pay and where to report the reference. */
+export function UpgradeFlow({ plan, details, qrSrc, testing }: { plan: Plan; details: PaymentDetails; qrSrc: string | null; testing: boolean }) {
   const router = useRouter();
-  const [step, setStep] = useState<"plans" | "payment">("plans");
-  const [mode, setMode] = useState<PaymentMode>("upi");
-  const [utr, setUtr] = useState("");
-  const [notice, setNotice] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [planStatus, setPlanStatus] = useState<string>("loading");
-  const [paymentStatus, setPaymentStatus] = useState<string>("none");
-  const [paymentBusy, setPaymentBusy] = useState(false);
+  const ids = useId();
+  const methods: Mode[] = [...(details.upi ? (["upi"] as const) : []), ...(details.bank ? (["bank"] as const) : [])];
+  const [paying, setPaying] = useState(false);
+  const [mode, setMode] = useState<Mode>(methods[0] ?? "upi");
+  const [reference, setReference] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
 
-  async function refreshPlan() {
+  const copy = async (text: string) => {
     try {
-      const response = await fetch("/api/subscription", { cache: "no-store" });
-      const data = await response.json();
-      if (response.ok) { setPlanStatus(data.plan?.status ?? "none"); setPaymentStatus(data.plan?.payment?.status ?? "none"); }
-    } catch { setPlanStatus("unknown"); }
-  }
-
-  useEffect(() => { void refreshPlan(); }, []);
-
-  async function startFreeTrial() {
-    setNotice("");
-    const response = await fetch("/api/subscription", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "start_trial" }) });
-    const data = await response.json();
-    if (!response.ok) { setNotice(data.error ?? "Could not start the free trial."); return; }
-    setPlanStatus("trial");
-    router.push("/dashboard");
-    router.refresh();
-  }
-
-  const upiLink = useMemo(() => {
-    if (!UPI_ID) return "";
-    const params = new URLSearchParams({ pa: UPI_ID, pn: UPI_NAME, am: "79.00", cu: "INR", tn: "VedicSlokas monthly subscription" });
-    return `upi://pay?${params.toString()}`;
-  }, []);
-  const qrUrl = upiLink ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiLink)}` : "";
-
-  async function copyText(value: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(text);
+      toast("Copied");
     } catch {
-      setNotice("Please select and copy the payment detail manually.");
+      toast("Couldn't copy. Please select it and copy by hand.", { tone: "error" });
     }
-  }
+  };
 
-  async function submitPaymentProof(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!utr.trim()) { setNotice("Enter the UPI transaction ID / UTR after making the payment."); return; }
-    setPaymentBusy(true); setNotice("");
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSending(true);
     try {
-      const response = await fetch("/api/subscription", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit_payment", mode, utr }) });
-      const data = await response.json();
-      if (!response.ok) { setNotice(data.error ?? "Could not submit payment details."); return; }
-      setPlanStatus("pending");
-      setPaymentStatus("pending");
-      setNotice("Payment reference submitted. Your account will switch to Subscription mode after the transaction is verified. Please refresh this page after verification.");
-    } catch { setNotice("Network error. Please try again."); }
-    finally { setPaymentBusy(false); }
-  }
+      await meFetch("/api/me/plan", { body: { mode, reference } });
+      setReference("");
+      setPaying(false);
+      toast("Thank you. We'll activate your plan once we find the payment.");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof MeError && ERRORS[err.code] ? ERRORS[err.code] : failureMessage(err, "send your reference"));
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
-    <div className="dash-page space-y-8">
-      <header className="dash-enter">
-        <Link href="/dashboard" className="inline-flex min-h-10 items-center gap-2 text-sm text-ink-muted transition-colors hover:text-ink">
-          <span aria-hidden="true">←</span> Back to dashboard
-        </Link>
-        <p className="eyebrow mt-5">Your learning journey</p>
-        <h1 className="display mt-2 text-4xl text-ink sm:text-5xl">Choose how you learn</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-muted sm:text-base">Start with a small taste of VedicSlokas, or unlock the complete learning experience with one simple monthly plan.</p>
-        <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-4">
-          <span className="text-sm text-ink-muted">Current account mode</span>
-          <strong className="rounded-full bg-surface-2 px-3 py-1 text-sm text-ink">{planStatus === "active" ? "Subscription active" : planStatus === "trial" ? "Free Trial" : planStatus === "pending" ? "Payment verification pending" : planStatus === "expired" ? "Plan expired / rejected" : planStatus === "none" ? "No plan selected" : "Checking status…"}</strong>
-          <span className="text-xs text-ink-muted">{paymentStatus === "verified" ? "Payment transaction completed" : paymentStatus === "pending" ? "Payment submitted · awaiting verification" : paymentStatus === "rejected" ? "Payment was rejected" : ""}</span><button type="button" onClick={() => void refreshPlan()} className="ml-auto min-h-9 rounded-full border border-line px-3 text-xs font-semibold text-ink hover:border-gold">Refresh status</button>
-        </div>
+    <div className="space-y-6">
+      {testing && <p className="rounded-2xl border border-dashed border-gold/60 p-3 text-sm text-ink-muted">Testing mode: only admins and invited testers can see this page.</p>}
+      <header>
+        <h1 className="display text-4xl text-ink sm:text-5xl">Your plan</h1>
+        <p className="mt-2 max-w-2xl text-ink-muted">The verses stay free for everyone. The monthly plan supports the work and unlocks the learning modules as they open.</p>
       </header>
 
-      <div className="flex items-center gap-3" aria-label="Checkout progress">
-        <StepMark number={1} active={step === "plans"} />
-        <span className={`text-sm ${step === "plans" ? "font-semibold text-ink" : "text-ink-muted"}`}>Choose plan</span>
-        <span className="h-px flex-1 bg-line" />
-        <StepMark number={2} active={step === "payment"} />
-        <span className={`text-sm ${step === "payment" ? "font-semibold text-ink" : "text-ink-muted"}`}>Payment</span>
+      <Status plan={plan} />
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <section aria-labelledby={`${ids}-free`} className="dash-card flex flex-col p-6">
+          <h2 id={`${ids}-free`} className="display text-3xl text-ink">
+            Free
+          </h2>
+          <p className="mt-1 text-ink-muted">₹0, always</p>
+          <ul className="mt-5 space-y-2.5 text-sm text-ink">
+            {FREE.map((f) => (
+              <li key={f} className="flex gap-3">
+                <Tick /> {f}
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section aria-labelledby={`${ids}-paid`} className="dash-card flex flex-col border-gold/60 p-6">
+          <h2 id={`${ids}-paid`} className="display text-3xl text-ink">
+            Monthly
+          </h2>
+          <p className="mt-1 text-ink-muted">
+            <span className="display text-2xl text-ink">₹{details.priceInr}</span> a month
+          </p>
+          <ul className="mt-5 flex-1 space-y-2.5 text-sm text-ink">
+            {PAID.map((f) => (
+              <li key={f.label} className={`flex gap-3 ${f.soon ? "text-ink-muted" : ""}`}>
+                <Tick soon={f.soon} /> {f.label}
+              </li>
+            ))}
+          </ul>
+          {!plan.pending && (
+            <button
+              type="button"
+              aria-expanded={paying}
+              aria-controls={`${ids}-pay`}
+              onClick={() => setPaying((p) => !p)}
+              className="mt-6 min-h-12 rounded-full bg-saffron px-6 text-sm font-semibold text-on-saffron"
+            >
+              {plan.active ? `Add a month · ₹${details.priceInr}` : `Pay ₹${details.priceInr}`}
+            </button>
+          )}
+        </section>
       </div>
 
-      {step === "plans" ? (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <section className="dash-card flex flex-col p-6 sm:p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div><p className="eyebrow">Explore first</p><h2 className="display mt-2 text-3xl text-ink">Free Trial</h2></div>
-              <span className="rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink-muted">₹0</span>
-            </div>
-            <p className="mt-4 text-sm leading-6 text-ink-muted">A simple way to begin your daily practice and experience the VedicSlokas learning space.</p>
-            <ul className="mt-6 flex-1 space-y-3 text-sm text-ink">
-              <li className="flex gap-3"><span className="text-accent">✓</span> Access to up to 7 selected slokas</li>
-              <li className="flex gap-3"><span className="text-accent">✓</span> Read verses and their meanings</li>
-              <li className="flex gap-3"><span className="text-accent">✓</span> Try the basic learning experience</li>
-              <li className="flex gap-3"><span className="text-ink-muted">—</span> Full classes, PDFs, notes and courses are not included</li>
-            </ul>
-            <button type="button" onClick={() => { void startFreeTrial(); }} className="mt-8 min-h-12 rounded-full border border-line px-5 text-sm font-semibold text-ink transition-colors hover:border-gold hover:bg-surface-2">Start Free Trial</button>
-            {notice && step === "plans" && <p role="status" className="mt-3 text-xs leading-5 text-ink-muted">{notice}</p>}
-          </section>
-
-          <section className="dash-card relative flex flex-col overflow-hidden border-gold/70 p-6 sm:p-8">
-            <div className="pointer-events-none absolute right-0 top-0 h-36 w-36 rounded-full bg-gold/10 blur-3xl" />
-            <div className="relative flex items-start justify-between gap-4">
-              <div><p className="eyebrow">Full access</p><h2 className="display mt-2 text-3xl text-ink">Monthly Subscription</h2></div>
-              <span className="rounded-full bg-gold px-3 py-1 text-xs font-bold text-[#24170b]">Best value</span>
-            </div>
-            <div className="relative mt-5 flex items-baseline gap-2"><span className="display text-5xl text-ink">₹79</span><span className="text-sm text-ink-muted">/ month</span></div>
-            <p className="relative mt-3 text-sm leading-6 text-ink-muted">Keep learning without the trial limit. One monthly plan for your complete study routine.</p>
-            <ul className="relative mt-6 flex-1 space-y-3 text-sm text-ink">
-              <li className="flex gap-3"><span className="text-accent">✓</span> Full sloka library</li>
-              <li className="flex gap-3"><span className="text-accent">✓</span> Live classes</li>
-              <li className="flex gap-3"><span className="text-accent">✓</span> PDFs and study notes</li>
-              <li className="flex gap-3"><span className="text-accent">✓</span> Courses and premium learning materials</li>
-              <li className="flex gap-3"><span className="text-accent">✓</span> Continue learning beyond the 7-sloka trial</li>
-            </ul>
-            <button type="button" onClick={() => { setNotice(""); setStep("payment"); }} className="relative mt-8 min-h-12 rounded-full bg-gold px-5 text-sm font-bold text-[#24170b] transition hover:brightness-110">Choose Monthly Plan · ₹79</button>
-          </section>
-        </div>
-      ) : (
-        <section className="dash-card p-5 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div><p className="eyebrow">Monthly subscription</p><h2 className="display mt-2 text-3xl text-ink">Pay ₹79</h2><p className="mt-2 text-sm text-ink-muted">Choose one of the two manual payment methods below.</p></div>
-            <button type="button" onClick={() => { setStep("plans"); setNotice(""); }} className="min-h-10 rounded-full border border-line px-4 text-sm text-ink hover:border-gold">Change plan</button>
+      {paying && !plan.pending && (
+        <section id={`${ids}-pay`} aria-labelledby={`${ids}-pay-title`} className="dash-card space-y-6 p-5 sm:p-8">
+          <div>
+            <h2 id={`${ids}-pay-title`} className="display text-3xl text-ink">
+              Pay ₹{details.priceInr}
+            </h2>
+            <p className="mt-1 text-sm text-ink-muted">Pay exactly ₹{details.priceInr}, then tell us the transaction reference so we can match it.</p>
           </div>
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            <button type="button" onClick={() => { setMode("upi"); setNotice(""); }} aria-pressed={mode === "upi"} className={`rounded-2xl border p-4 text-left transition ${mode === "upi" ? "border-gold bg-gold/10" : "border-line hover:border-gold/60"}`}>
-              <span className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-surface-2 text-lg font-bold text-accent">₹</span><span><span className="block font-semibold text-ink">PhonePe / UPI QR</span><span className="mt-1 block text-xs text-ink-muted">Scan using PhonePe, GPay or another UPI app</span></span></span>
-            </button>
-            <button type="button" onClick={() => { setMode("bank"); setNotice(""); }} aria-pressed={mode === "bank"} className={`rounded-2xl border p-4 text-left transition ${mode === "bank" ? "border-gold bg-gold/10" : "border-line hover:border-gold/60"}`}>
-              <span className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-surface-2 text-accent"><svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h18L12 3 3 9ZM5 10v8m4-8v8m6-8v8m4-8v8M3 21h18M2 18h20" /></svg></span><span><span className="block font-semibold text-ink">Bank Transfer</span><span className="mt-1 block text-xs text-ink-muted">Pay through your bank app or net banking</span></span></span>
-            </button>
-          </div>
-
-          {mode === "upi" ? (
-            <div className="mt-6 grid gap-6 rounded-2xl border border-line p-5 sm:grid-cols-[240px_1fr] sm:items-center sm:p-6">
-              <div className="mx-auto grid min-h-[240px] w-full max-w-[240px] place-items-center rounded-xl bg-white p-3 text-center">
-                {qrUrl ? <img src={qrUrl} alt="UPI payment QR code for the ₹79 VedicSlokas subscription" width={216} height={216} className="h-[216px] w-[216px]" /> : <div className="px-3 text-sm text-slate-700"><div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-lg border-2 border-dashed border-slate-400 text-3xl">▦</div><strong>UPI QR will appear here</strong><p className="mt-2 text-xs">Set NEXT_PUBLIC_UPI_ID in your environment settings to generate your real payment QR.</p></div>}
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-ink">Scan and pay ₹79</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-muted">Scan the QR with PhonePe or Google Pay and complete the ₹79 payment. On a phone, use the UPI app if available. Please verify the recipient name before paying.</p>
-                {UPI_ID ? <div className="mt-4 rounded-xl border border-line p-3"><p className="text-xs text-ink-muted">UPI ID</p><div className="mt-1 flex items-center justify-between gap-3"><code className="break-all text-sm text-ink">{UPI_ID}</code><button type="button" onClick={() => copyText(UPI_ID)} className="shrink-0 rounded-full border border-line px-3 py-1.5 text-xs text-ink">{copied ? "Copied" : "Copy"}</button></div></div> : <p className="mt-4 rounded-xl border border-line p-3 text-xs leading-5 text-ink-muted">Payment setup needed: add your real UPI ID and display name to the environment variables before publishing.</p>}
-                {upiLink && <a href={upiLink} className="mt-4 inline-flex min-h-11 items-center rounded-full bg-gold px-5 text-sm font-bold text-[#24170b]">Open PhonePe / Google Pay</a>}
-              </div>
-            </div>
+          {methods.length === 0 ? (
+            <p className="rounded-xl border border-line p-4 text-sm text-ink-muted">Payment details aren&apos;t set up yet. Please check back soon.</p>
           ) : (
-            <div className="mt-6 rounded-2xl border border-line p-5 sm:p-6">
-              <h3 className="text-lg font-semibold text-ink">Bank account details</h3>
-              <p className="mt-2 text-sm leading-6 text-ink-muted">Use these details in your bank app or net-banking portal. Transfer exactly ₹79 and confirm the account name before sending.</p>
-              {BANK_NAME && BANK_ACCOUNT && BANK_IFSC ? <dl className="mt-5 divide-y divide-line rounded-xl border border-line px-4">{[["Account holder", BANK_HOLDER], ["Bank", BANK_NAME], ["Account number", BANK_ACCOUNT], ["IFSC", BANK_IFSC]].map(([label, value]) => <div key={label} className="flex flex-wrap justify-between gap-2 py-3 text-sm"><dt className="text-ink-muted">{label}</dt><dd className="break-all font-medium text-ink">{value}</dd></div>)}</dl> : <p className="mt-5 rounded-xl border border-line p-4 text-sm leading-6 text-ink-muted">Bank details are not configured yet. Add the real account holder, bank name, account number and IFSC in your deployment environment variables before accepting payments.</p>}
-              {BANK_ACCOUNT && <button type="button" onClick={() => copyText(BANK_ACCOUNT)} className="mt-3 rounded-full border border-line px-4 py-2 text-xs text-ink">{copied ? "Copied" : "Copy account number"}</button>}
-            </div>
-          )}
+            <>
+              {methods.length > 1 && (
+                <fieldset className="flex flex-wrap gap-2">
+                  <legend className="sr-only">How you will pay</legend>
+                  {methods.map((m) => (
+                    <label
+                      key={m}
+                      className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm ${mode === m ? "border-gold bg-gold/10 text-ink" : "border-line text-ink-muted"}`}
+                    >
+                      <input type="radio" name="mode" value={m} checked={mode === m} onChange={() => setMode(m)} className="accent-[var(--saffron)]" />
+                      {m === "upi" ? "UPI" : "Bank transfer"}
+                    </label>
+                  ))}
+                </fieldset>
+              )}
 
-          <form onSubmit={submitPaymentProof} className="mt-6 rounded-2xl border border-line p-5 sm:p-6">
-            <h3 className="font-semibold text-ink">After you pay</h3>
-            <p className="mt-1 text-sm leading-6 text-ink-muted">Enter the transaction reference / UTR so the team can match your payment.</p>
-            <label htmlFor="payment-utr" className="mt-4 block text-sm font-medium text-ink">Transaction ID / UTR</label>
-            <input id="payment-utr" value={utr} onChange={(e) => setUtr(e.target.value)} placeholder="Enter transaction reference" className="mt-2 min-h-12 w-full rounded-xl border border-line bg-surface px-4 text-sm text-ink outline-none placeholder:text-ink-muted focus:border-gold" />
-            <button type="submit" disabled={paymentBusy} className="mt-4 min-h-12 rounded-full bg-gold px-6 text-sm font-bold text-[#24170b] hover:brightness-110 disabled:opacity-60">{paymentBusy ? "Submitting…" : "Submit payment reference"}</button>
-            {notice && <p role="status" className="mt-4 rounded-xl border border-line bg-surface p-3 text-sm leading-6 text-ink-muted">{notice}</p>}
-            <p className="mt-4 text-xs leading-5 text-ink-muted">Manual payment only. Your reference is stored as pending until an administrator verifies the payment. Never enter a card number, expiry date or CVC here.</p>
-          </form>
+              {mode === "upi" && details.upi && (
+                <div className="grid items-center gap-6 sm:grid-cols-[13rem_1fr]">
+                  {qrSrc && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={qrSrc} alt={`UPI QR code to pay ₹${details.priceInr} to ${details.upi.name}`} width={208} height={208} className="mx-auto rounded-xl bg-white p-2" />
+                  )}
+                  <div className="space-y-3 text-sm">
+                    <p className="text-ink-muted">Scan with any UPI app. Check that the name shown is {details.upi.name} before you pay.</p>
+                    <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3">
+                      <code className="break-all text-ink">{details.upi.id}</code>
+                      <button
+                        type="button"
+                        onClick={() => void copy(details.upi?.id ?? "")}
+                        className="ml-auto min-h-10 rounded-full border border-line px-4 text-xs font-semibold text-ink hover:border-gold"
+                      >
+                        Copy UPI ID
+                      </button>
+                    </div>
+                    <a href={details.upi.link} className="inline-flex min-h-11 items-center rounded-full border border-gold/60 px-5 font-semibold text-ink sm:hidden">
+                      Open my UPI app
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {mode === "bank" && details.bank && (
+                <dl className="divide-y divide-line rounded-xl border border-line px-4 text-sm">
+                  {[
+                    ["Account holder", details.bank.holder],
+                    ["Bank", details.bank.name],
+                    ["Account number", details.bank.account],
+                    ["IFSC", details.bank.ifsc],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex flex-wrap items-center justify-between gap-2 py-3">
+                      <dt className="text-ink-muted">{label}</dt>
+                      <dd className="flex items-center gap-3 font-medium text-ink">
+                        <span className="break-all">{value}</span>
+                        {label === "Account number" && (
+                          <button type="button" onClick={() => void copy(value)} className="min-h-10 rounded-full border border-line px-3 text-xs font-semibold hover:border-gold">
+                            Copy
+                          </button>
+                        )}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              <form onSubmit={(e) => void submit(e)} className="space-y-3 border-t border-line pt-6">
+                <label htmlFor={`${ids}-ref`} className="block text-sm font-medium text-ink">
+                  Transaction reference (UTR)
+                </label>
+                <p id={`${ids}-ref-hint`} className="text-xs text-ink-muted">
+                  {mode === "upi" ? "In your UPI app, open the payment: the UTR is a 12 digit number." : "Your bank shows it on the transfer receipt."}
+                </p>
+                <input
+                  id={`${ids}-ref`}
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  required
+                  maxLength={60}
+                  autoComplete="off"
+                  inputMode={mode === "upi" ? "numeric" : "text"}
+                  aria-describedby={`${ids}-ref-hint${error ? ` ${ids}-ref-error` : ""}`}
+                  aria-invalid={error ? true : undefined}
+                  className="h-12 w-full rounded-xl border border-line bg-surface px-4 font-mono tracking-wider text-ink focus:border-gold"
+                />
+                {error && (
+                  <p id={`${ids}-ref-error`} role="alert" className="text-sm text-[#f0a89c]">
+                    {error}
+                  </p>
+                )}
+                <button type="submit" disabled={sending || !reference.trim()} className="min-h-12 rounded-full bg-saffron px-6 text-sm font-semibold text-on-saffron disabled:opacity-60">
+                  {sending ? "Sending…" : "I have paid: send reference"}
+                </button>
+                <p className="text-xs text-ink-muted">We never ask for card numbers, OTPs or your UPI PIN.</p>
+              </form>
+            </>
+          )}
         </section>
       )}
     </div>

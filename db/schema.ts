@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
@@ -102,6 +103,9 @@ export const auditEvent = pgEnum("audit_event", [
   "email_send_failed",
   "account_deleted",
   "data_exported",
+  "payment_submitted",
+  "payment_verified",
+  "payment_rejected",
 ]);
 
 /** Security-relevant auth events. Never stores tokens. */
@@ -209,25 +213,48 @@ export type Feature = (typeof FEATURES)[number];
 export type AuditEvent = (typeof auditEvent.enumValues)[number];
 
 
-/** Customer-selected plan and current entitlement state. */
-export const studentPlanStatus = pgEnum("student_plan_status", ["trial", "pending", "active", "expired"]);
-export const studentPlan = pgTable("student_plan", {
-  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
-  status: studentPlanStatus("status").notNull().default("trial"),
-  trialStartedAt: timestamp("trial_started_at", { withTimezone: true }),
-  subscriptionStartedAt: timestamp("subscription_started_at", { withTimezone: true }),
-  subscriptionExpiresAt: timestamp("subscription_expires_at", { withTimezone: true }),
+/**
+ * A paid subscription is just an end date: the student is subscribed while expires_at is in
+ * the future. Renewals push it forward. Removed with the account.
+ */
+export const subscription = pgTable("subscription", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const PAYMENT_MODES = ["upi", "bank"] as const;
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
 export const paymentStatus = pgEnum("payment_status", ["pending", "verified", "rejected"]);
-export const subscriptionPayment = pgTable("subscription_payment", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  amountPaise: integer("amount_paise").notNull().default(7900),
-  mode: text("mode").notNull(),
-  utr: text("utr").notNull(),
-  status: paymentStatus("status").notNull().default("pending"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  verifiedAt: timestamp("verified_at", { withTimezone: true }),
-}, (t) => [index("subscription_payment_user_idx").on(t.userId), index("subscription_payment_status_idx").on(t.status)]);
+
+/**
+ * A manual payment the student reports (UPI or bank transfer), checked by an admin against
+ * the bank statement. The reference (UTR) is unique, so one transfer can never be claimed
+ * twice, and a student has at most one pending payment. Kept for the accounts when the
+ * student deletes their account: user_id becomes null, so nothing identifies them.
+ */
+export const subscriptionPayment = pgTable(
+  "subscription_payment",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    amountPaise: integer("amount_paise").notNull(),
+    mode: text("mode", { enum: PAYMENT_MODES }).notNull(),
+    /** Normalised: upper case, no spaces. */
+    reference: text("reference").notNull().unique(),
+    status: paymentStatus("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewedBy: text("reviewed_by").references(() => user.id, { onDelete: "set null" }),
+  },
+  (t) => [
+    index("subscription_payment_user_idx").on(t.userId),
+    index("subscription_payment_status_idx").on(t.status, t.createdAt),
+    uniqueIndex("subscription_payment_one_pending_idx")
+      .on(t.userId)
+      .where(sql`${t.status} = 'pending'`),
+  ],
+);

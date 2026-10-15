@@ -48,6 +48,22 @@ const schema = z
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: optional,
     /** Bump when the Terms or Privacy Policy change materially. */
     TERMS_VERSION: z.string().trim().min(1).default("2026-10-13"),
+    /**
+     * Who sees the paid plan and can pay: "off", "testers" (admins and SUBSCRIPTION_TESTERS
+     * only) or "on" (everyone). Defaults to testers, so nothing is sold by accident.
+     */
+    SUBSCRIPTIONS: z.enum(["off", "testers", "on"]).default("testers"),
+    /** Comma separated emails that may test the paid plan while SUBSCRIPTIONS=testers. */
+    SUBSCRIPTION_TESTERS: optional,
+    /** Monthly price in whole rupees. */
+    SUBSCRIPTION_PRICE_INR: z.coerce.number().int().min(1).max(100000).default(79),
+    /** Where students pay. Read on the server only and shown on the payment page. */
+    PAYMENT_UPI_ID: optional.pipe(z.string().regex(/^[\w.-]{2,256}@[a-zA-Z][\w.-]{1,63}$/, "must look like name@bank").optional()),
+    PAYMENT_UPI_NAME: optional,
+    PAYMENT_BANK_HOLDER: optional,
+    PAYMENT_BANK_NAME: optional,
+    PAYMENT_BANK_ACCOUNT: optional.pipe(z.string().regex(/^\d{6,20}$/, "digits only").optional()),
+    PAYMENT_BANK_IFSC: optional.pipe(z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/, "must be an IFSC like SBIN0001234").optional()),
   })
   .superRefine((env, ctx) => {
     const need = (key: keyof typeof env, why: string) => {

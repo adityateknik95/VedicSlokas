@@ -158,3 +158,38 @@ test("deleting the account removes everything and signs the student out", async 
   const mail = await emailTo(email);
   expect(mail.subject).toMatch(/deleted/i);
 });
+
+test("the paid plan is only visible to testers, who can report a payment", async ({ page, browser }) => {
+  // An ordinary student: no plan link, the page does not exist, the API refuses.
+  await signUpAndIn(page, "Ravi");
+  await skipOnboarding(page);
+  await expect(page.getByRole("link", { name: "Your plan" })).toHaveCount(0);
+  // (The dashboard streams, so the status is already 200; the page itself is the not-found one.)
+  await page.goto("/dashboard/upgrade");
+  await expect(page.getByRole("heading", { name: "This path leads nowhere real" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your plan" })).toHaveCount(0);
+  expect((await api(page, "/api/me/plan")).status).toBe(403);
+
+  // A tester sees it, pays by UPI (QR drawn by our server) and reports the reference.
+  const t = await (await browser.newContext()).newPage();
+  await signUpAndIn(t, "Plan Tester", "plan.tester@example.com");
+  await skipOnboarding(t);
+  await t.goto("/dashboard/upgrade");
+  await expect(t.getByRole("heading", { name: "Your plan", level: 1 })).toBeVisible();
+  await t.getByRole("button", { name: "Pay ₹79" }).click();
+  await expect(t.getByRole("img", { name: /UPI QR code to pay ₹79/ })).toHaveAttribute("src", /^data:image\/svg\+xml/);
+  await t.getByLabel("Transaction reference (UTR)").fill("12");
+  await t.getByRole("button", { name: /send reference/ }).click();
+  await expect(t.getByRole("alert").filter({ hasText: "doesn't look right" })).toBeVisible();
+  await t.getByLabel("Transaction reference (UTR)").fill("4012 3456 7890");
+  await t.getByRole("button", { name: /send reference/ }).click();
+  await expect(t.getByRole("status").filter({ hasText: "Payment being checked" })).toBeVisible();
+  await expect(t.getByText("401234567890")).toBeVisible();
+
+  // The same transfer cannot be claimed again, and a student cannot approve their own payment.
+  const again = await api(t, "/api/me/plan", { body: { mode: "upi", reference: "401234567890" } });
+  expect(again.status).toBe(409);
+  const plan = await api<{ plan: { pending: { id: string } } }>(t, "/api/me/plan");
+  const self = await api(t, "/api/admin/payments/review", { body: { paymentId: plan.body.plan.pending.id, approve: true } });
+  expect(self.status).toBe(403);
+});

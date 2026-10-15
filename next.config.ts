@@ -58,6 +58,7 @@ const nextConfig: NextConfig = {
       { source: "/check-email", headers: noStore },
       { source: "/dashboard/:path*", headers: noStore },
       { source: "/dashboard", headers: noStore },
+      { source: "/admin/:path*", headers: noStore },
       { source: "/api/auth/:path*", headers: noStore },
       { source: "/api/sign-in-status", headers: noStore },
       // The confirm page carries a token in its URL: never send it anywhere as a Referer.

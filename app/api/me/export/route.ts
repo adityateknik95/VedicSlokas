@@ -2,13 +2,15 @@ import { audit } from "@/lib/audit";
 import { exportAccount } from "@/lib/dashboard/data";
 import { json, meRoute } from "@/lib/dashboard/api";
 import { requestMeta } from "@/lib/request-meta";
+import { getPlan, paymentsFor } from "@/lib/subscriptions";
 
 export const dynamic = "force-dynamic";
 
 /** "Download my data": everything we hold about this student, as one JSON file. */
 export const GET = meRoute(
   async ({ session }) => {
-    const data = await exportAccount(session.user);
+    const [account, plan, payments] = await Promise.all([exportAccount(session.user), getPlan(session.user.id), paymentsFor(session.user.id)]);
+    const data = { ...account, subscription: { active: plan.active, expiresAt: plan.expiresAt }, payments };
     const meta = await requestMeta();
     // No personal content in the log: who and when, plus sizes.
     await audit("data_exported", {
