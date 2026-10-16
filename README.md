@@ -284,12 +284,11 @@ classes, notes, courses) through `getEntitlements`, the only place that decides 
 a module's status is `"soon"` it shows as coming soon, paid or not.
 
 **Who sees it:** `SUBSCRIPTIONS` in the environment.
-- `testers` (the default): only accounts with the `admin` role and the emails in
-  `SUBSCRIPTION_TESTERS`.
-- `on`: everyone.
+- `on` (the default): every signed-in student.
+- `testers`: only accounts with the `admin` role and the emails in `SUBSCRIPTION_TESTERS`.
 - `off`: no one.
 
-Everyone else gets no "Your plan" link, a not-found page at `/dashboard/upgrade`, and 403 from
+Anyone it isn't shown to gets no "Your plan" link, a not-found page at `/dashboard/upgrade`, and 403 from
 the API.
 
 **How paying works:** manual UPI or bank transfer, no gateway.
@@ -325,7 +324,7 @@ Export includes the plan and payments. The logic is in `lib/subscriptions.ts`, w
 update "user" set role = 'admin' where email = 'you@example.com';
 ```
 
-**Before selling to everyone:**
-- Set `SUBSCRIPTIONS=on`.
+**Before taking real payments:**
+- Set the `PAYMENT_*` details in Vercel (until then the page says payment isn't set up yet).
 - Add the price, what it includes and the refund policy to the Terms.
 - Turn the modules' status to `"live"` as their content arrives.

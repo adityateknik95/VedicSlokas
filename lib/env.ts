@@ -49,10 +49,10 @@ const schema = z
     /** Bump when the Terms or Privacy Policy change materially. */
     TERMS_VERSION: z.string().trim().min(1).default("2026-10-13"),
     /**
-     * Who sees the paid plan and can pay: "off", "testers" (admins and SUBSCRIPTION_TESTERS
-     * only) or "on" (everyone). Defaults to testers, so nothing is sold by accident.
+     * Who sees the paid plan and can pay: "on" (every signed-in student, the default),
+     * "testers" (admins and SUBSCRIPTION_TESTERS only) or "off".
      */
-    SUBSCRIPTIONS: z.enum(["off", "testers", "on"]).default("testers"),
+    SUBSCRIPTIONS: z.enum(["off", "testers", "on"]).default("on"),
     /** Comma separated emails that may test the paid plan while SUBSCRIPTIONS=testers. */
     SUBSCRIPTION_TESTERS: optional,
     /** Monthly price in whole rupees. */
