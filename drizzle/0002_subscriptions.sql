@@ -1,7 +1,29 @@
-CREATE TYPE "public"."payment_status" AS ENUM('pending', 'verified', 'rejected');--> statement-breakpoint
-ALTER TYPE "public"."audit_event" ADD VALUE 'payment_submitted';--> statement-breakpoint
-ALTER TYPE "public"."audit_event" ADD VALUE 'payment_verified';--> statement-breakpoint
-ALTER TYPE "public"."audit_event" ADD VALUE 'payment_rejected';--> statement-breakpoint
+-- The paid plan: subscription (an end date per student) and subscription_payment (manual
+-- UPI/bank payments checked by an admin).
+-- An earlier draft of this feature was applied to some databases: it created payment_status
+-- (same values) and its own subscription_payment table with a "utr" column. This migration
+-- tolerates the first and keeps the second's rows as subscription_payment_legacy.
+DO $$ BEGIN
+  CREATE TYPE "public"."payment_status" AS ENUM('pending', 'verified', 'rejected');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;--> statement-breakpoint
+ALTER TYPE "public"."audit_event" ADD VALUE IF NOT EXISTS 'payment_submitted';--> statement-breakpoint
+ALTER TYPE "public"."audit_event" ADD VALUE IF NOT EXISTS 'payment_verified';--> statement-breakpoint
+ALTER TYPE "public"."audit_event" ADD VALUE IF NOT EXISTS 'payment_rejected';--> statement-breakpoint
+DO $$
+DECLARE c record;
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'subscription_payment' AND column_name = 'utr') THEN
+    ALTER TABLE "public"."subscription_payment" RENAME TO "subscription_payment_legacy";
+    -- Free the old names, so the new table can use them.
+    FOR c IN SELECT conname FROM pg_constraint WHERE conrelid = 'public.subscription_payment_legacy'::regclass AND conname LIKE 'subscription_payment%' LOOP
+      EXECUTE format('ALTER TABLE "public"."subscription_payment_legacy" RENAME CONSTRAINT %I TO %I', c.conname, replace(c.conname, 'subscription_payment', 'subscription_payment_legacy'));
+    END LOOP;
+    FOR c IN SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'subscription_payment_legacy' AND indexname LIKE 'subscription_payment%' AND indexname NOT LIKE 'subscription_payment_legacy%' LOOP
+      EXECUTE format('ALTER INDEX "public".%I RENAME TO %I', c.indexname, replace(c.indexname, 'subscription_payment', 'subscription_payment_legacy'));
+    END LOOP;
+  END IF;
+END $$;--> statement-breakpoint
 CREATE TABLE "subscription" (
 	"user_id" text PRIMARY KEY NOT NULL,
 	"started_at" timestamp with time zone NOT NULL,
