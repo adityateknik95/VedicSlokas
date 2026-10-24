@@ -119,10 +119,20 @@ export async function joinClass(userId: string, classId: string, entitled: boole
 /* ───────── Managing (teachers and admins) ───────── */
 
 export type Actor = { id: string; name: string; role?: string | null };
-const isAdmin = (a: Actor) => a.role === "admin";
-const isTeacher = (a: Actor) => a.role === "teacher" || isAdmin(a);
+export const isAdmin = (a: Actor) => a.role === "admin";
+export const isTeacher = (a: Actor) => a.role === "teacher" || isAdmin(a);
 
-export type ManagedClass = ClassView & { meetingUrl: string; teacherId: string | null; joined: number };
+/** The stored class, including its meeting details, for code that manages it. */
+export async function classRow(id: string): Promise<Row | null> {
+  const db = await getDb();
+  const [row] = await db.select().from(liveClass).where(eq(liveClass.id, id)).limit(1);
+  return row ?? null;
+}
+
+/** May this actor change this class? Teachers: their own. Admins: any. */
+export const mayManage = (actor: Actor, row: Pick<Row, "teacherId">) => isAdmin(actor) || (isTeacher(actor) && row.teacherId === actor.id);
+
+export type ManagedClass = ClassView & { meetingUrl: string; teacherId: string | null; joined: number; autoMeet: boolean };
 
 /** Admins see every class from the last 60 days on; teachers see their own. */
 export async function managedClasses(actor: Actor, now = Date.now()): Promise<ManagedClass[]> {
@@ -143,7 +153,7 @@ export async function managedClasses(actor: Actor, now = Date.now()): Promise<Ma
         .groupBy(classAttendance.classId)
     : [];
   const joined = new Map(counts.map((c) => [c.classId, c.n]));
-  return rows.map((r) => ({ ...view(r), meetingUrl: r.meetingUrl, teacherId: r.teacherId, joined: joined.get(r.id) ?? 0 }));
+  return rows.map((r) => ({ ...view(r), meetingUrl: r.meetingUrl, teacherId: r.teacherId, joined: joined.get(r.id) ?? 0, autoMeet: r.googleEventId !== null }));
 }
 
 export type ClassInput = {
@@ -155,6 +165,10 @@ export type ClassInput = {
   recordingUrl?: string | null;
   /** Admins only: the teacher's account email. Teachers always teach their own classes. */
   teacherEmail?: string | null;
+  /** Set when the site created the meeting on Google Calendar; null forgets an earlier one. */
+  google?: { eventId: string; ownerId: string } | null;
+  /** Use this id for a new class (so a Calendar event made first can carry the same id). */
+  newId?: string;
 };
 
 export type SaveResult = { ok: true; id: string } | { ok: false; reason: "forbidden" | "not_found" | "invalid_meeting_url" | "invalid_recording_url" | "unknown_teacher" };
@@ -186,9 +200,11 @@ export async function saveClass(actor: Actor, input: ClassInput, now = Date.now(
     updatedAt: new Date(now),
   };
 
+  const google =
+    input.google === null ? { googleEventId: null, googleOwnerId: null } : input.google ? { googleEventId: input.google.eventId, googleOwnerId: input.google.ownerId } : {};
   if (!input.id) {
-    const id = randomUUID();
-    await db.insert(liveClass).values({ id, ...fields, teacherId: teacher.id, teacherName: teacher.name, createdBy: actor.id, createdAt: new Date(now) });
+    const id = input.newId ?? randomUUID();
+    await db.insert(liveClass).values({ id, ...fields, ...google, teacherId: teacher.id, teacherName: teacher.name, createdBy: actor.id, createdAt: new Date(now) });
     return { ok: true, id };
   }
 
@@ -198,7 +214,7 @@ export async function saveClass(actor: Actor, input: ClassInput, now = Date.now(
   const reassign = isAdmin(actor) && input.teacherEmail ? { teacherId: teacher.id, teacherName: teacher.name } : {};
   await db
     .update(liveClass)
-    .set({ ...fields, ...reassign })
+    .set({ ...fields, ...google, ...reassign })
     .where(eq(liveClass.id, input.id));
   return { ok: true, id: input.id };
 }

@@ -29,6 +29,13 @@
       "when": 1792818583140,
       "tag": "0003_live_classes",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792820868585,
+      "tag": "0004_google_meet",
+      "breakpoints": true
     }
   ]
 }

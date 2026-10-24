@@ -1,6 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { audit } from "@/lib/audit";
 import { getAuth, SESSION_HINT_COOKIE } from "@/lib/auth";
+import { removeGoogleLink } from "@/lib/class-meetings";
 import { deleteAccount } from "@/lib/dashboard/data";
 import { json, meRoute, readBody, reauthRequired, signedInRecently } from "@/lib/dashboard/api";
 import { deleteBody } from "@/lib/dashboard/schemas";
@@ -27,6 +28,8 @@ export const POST = meRoute(
     } catch {
       // The session row goes with the user below anyway.
     }
+    // A teacher's Google grant is revoked at Google too, not just forgotten here.
+    await removeGoogleLink(id).catch(() => undefined);
     const removed = await deleteAccount(id, email);
     (await cookies()).delete(SESSION_HINT_COOKIE);
 

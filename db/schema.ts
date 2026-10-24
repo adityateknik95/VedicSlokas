@@ -108,6 +108,8 @@ export const auditEvent = pgEnum("audit_event", [
   "payment_rejected",
   "class_saved",
   "class_cancelled",
+  "google_connected",
+  "google_disconnected",
 ]);
 
 /** Security-relevant auth events. Never stores tokens. */
@@ -279,6 +281,10 @@ export const liveClass = pgTable(
     durationMin: integer("duration_min").notNull().default(60),
     meetingUrl: text("meeting_url").notNull(),
     recordingUrl: text("recording_url"),
+    /** The Google Calendar event that holds the Meet link, when the site created it. */
+    googleEventId: text("google_event_id"),
+    /** Whose Google account owns that event (so edits and cancellations go to the same calendar). */
+    googleOwnerId: text("google_owner_id").references(() => user.id, { onDelete: "set null" }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -301,3 +307,17 @@ export const classAttendance = pgTable(
   },
   (t) => [primaryKey({ columns: [t.classId, t.userId] })],
 );
+
+/**
+ * A teacher's Google account, connected so the site can create Calendar events with Meet
+ * links for their classes. Only the refresh token is kept, encrypted (AES-256-GCM with a key
+ * derived from BETTER_AUTH_SECRET). Removed with the account, or on Disconnect.
+ */
+export const googleCalendarLink = pgTable("google_calendar_link", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  googleEmail: text("google_email").notNull(),
+  refreshToken: text("refresh_token").notNull(),
+  connectedAt: timestamp("connected_at", { withTimezone: true }).notNull().defaultNow(),
+});

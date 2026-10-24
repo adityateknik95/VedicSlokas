@@ -67,7 +67,8 @@ export const classBody = z
     title: z.string().trim().min(2).max(120).refine(plainText, "No angle brackets or control characters"),
     description: optionalText(1000),
     startsAt: z.iso.datetime({ offset: true }).transform((v) => new Date(v)),
-    meetingUrl: z.string().trim().max(500),
+    /** Empty: the site makes a Google Meet link (or keeps the class's current one). */
+    meetingUrl: optionalText(500),
     recordingUrl: optionalText(500),
     teacherEmail: optionalText(254),
   })

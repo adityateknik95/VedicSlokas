@@ -13,6 +13,8 @@ const ERRORS: Record<string, string> = {
   unknown_teacher: "No teacher account has that email. Make them a teacher first.",
   forbidden: "You can only change your own classes.",
   not_found: "That class no longer exists.",
+  google_not_connected: "Your Google account isn't connected (or its access was removed). Connect it above, or paste your own link.",
+  google_failed: "Google Calendar couldn't make the meeting just now. Try again, or paste your own link.",
 };
 
 const field = "mt-1.5 h-12 w-full rounded-xl border border-line bg-surface px-4 text-ink focus:border-gold";
@@ -24,10 +26,14 @@ function localParts(iso: string) {
 }
 const localWhen = (iso: string) => new Date(iso).toLocaleString("en-IN", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-type Draft = { id?: string; title: string; description: string; date: string; time: string; meetingUrl: string; recordingUrl: string; teacherEmail: string };
-const EMPTY: Draft = { title: "", description: "", date: "", time: "", meetingUrl: "", recordingUrl: "", teacherEmail: "" };
+/** auto: the site makes (or keeps moving) a Google Meet link; own: a link typed in. */
+type LinkMode = "auto" | "own";
+type Draft = { id?: string; title: string; description: string; date: string; time: string; linkMode: LinkMode; autoMeet: boolean; meetingUrl: string; recordingUrl: string; teacherEmail: string };
+const EMPTY: Draft = { title: "", description: "", date: "", time: "", linkMode: "auto", autoMeet: false, meetingUrl: "", recordingUrl: "", teacherEmail: "" };
 
-function ClassForm({ initial, isAdmin, onDone }: { initial: Draft; isAdmin: boolean; onDone: () => void }) {
+export type GoogleState = { email: string | null; available: boolean };
+
+function ClassForm({ initial, isAdmin, google, onDone }: { initial: Draft; isAdmin: boolean; google: GoogleState; onDone: () => void }) {
   const router = useRouter();
   const ids = useId();
   const [d, setD] = useState(initial);
@@ -40,7 +46,8 @@ function ClassForm({ initial, isAdmin, onDone }: { initial: Draft; isAdmin: bool
     setError(null);
     const start = new Date(`${d.date}T${d.time}`);
     if (Number.isNaN(start.getTime())) return setError("Choose a date and a start time.");
-    if (!isMeetingUrl(d.meetingUrl.trim())) return setError(ERRORS.invalid_meeting_url);
+    const own = d.linkMode === "own";
+    if (own && !isMeetingUrl(d.meetingUrl.trim())) return setError(ERRORS.invalid_meeting_url);
     setSaving(true);
     try {
       await meFetch("/api/teach/classes", {
@@ -49,12 +56,12 @@ function ClassForm({ initial, isAdmin, onDone }: { initial: Draft; isAdmin: bool
           title: d.title,
           description: d.description || null,
           startsAt: start.toISOString(),
-          meetingUrl: d.meetingUrl.trim(),
+          meetingUrl: own ? d.meetingUrl.trim() : null,
           recordingUrl: d.recordingUrl.trim() || null,
           teacherEmail: isAdmin ? d.teacherEmail.trim() || null : null,
         },
       });
-      toast(d.id ? "Class updated." : "Class scheduled.");
+      toast(d.id ? "Class updated." : own ? "Class scheduled." : "Class scheduled, with a new Google Meet link.");
       onDone();
       router.refresh();
     } catch (err) {
@@ -81,10 +88,43 @@ function ClassForm({ initial, isAdmin, onDone }: { initial: Draft; isAdmin: bool
         Start time <span className="font-normal text-ink-muted">(your time zone; one hour long)</span>
         <input type="time" required value={d.time} onChange={set("time")} className={field} />
       </label>
-      <label className="text-sm font-medium text-ink sm:col-span-2">
-        Zoom or Google Meet link
-        <input type="url" required inputMode="url" placeholder="https://meet.google.com/…" value={d.meetingUrl} onChange={set("meetingUrl")} className={field} />
-      </label>
+      <fieldset className="sm:col-span-2">
+        <legend className="text-sm font-medium text-ink">Meeting link</legend>
+        {(google.email || d.autoMeet) && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(["auto", "own"] as const).map((m) => (
+              <label
+                key={m}
+                className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4 text-sm ${d.linkMode === m ? "border-gold bg-gold/10 text-ink" : "border-line text-ink-muted"}`}
+              >
+                <input type="radio" name={`${ids}-link`} value={m} checked={d.linkMode === m} onChange={() => setD({ ...d, linkMode: m })} className="accent-[var(--saffron)]" />
+                {m === "auto" ? (d.autoMeet ? "Keep the Google Meet link" : "Make a Google Meet link for me") : "Paste my own link"}
+              </label>
+            ))}
+          </div>
+        )}
+        {d.linkMode === "auto" && (google.email || d.autoMeet) ? (
+          <p className="mt-2 text-sm text-ink-muted">
+            {d.autoMeet
+              ? "The Calendar event and its Meet link move with any change to the date or time."
+              : `A one hour Google Calendar event with a Meet link is created on ${google.email} when you save.`}
+          </p>
+        ) : (
+          <>
+            <input
+              type="url"
+              required
+              inputMode="url"
+              aria-label="Zoom or Google Meet link"
+              placeholder="https://meet.google.com/… or https://…zoom.us/j/…"
+              value={d.meetingUrl}
+              onChange={set("meetingUrl")}
+              className={field}
+            />
+            {!google.email && !d.autoMeet && google.available && <p className="mt-2 text-xs text-ink-muted">Connect Google Meet above to have links made for you.</p>}
+          </>
+        )}
+      </fieldset>
       <label className="text-sm font-medium text-ink sm:col-span-2">
         What the class covers <span className="font-normal text-ink-muted">(optional)</span>
         <textarea maxLength={1000} rows={3} value={d.description} onChange={set("description")} className={`${field} h-auto py-3`} />
@@ -117,7 +157,75 @@ function ClassForm({ initial, isAdmin, onDone }: { initial: Draft; isAdmin: bool
 }
 
 /** The teacher's (or, for admins, everyone's) classes, with join counts, edit and cancel. */
-export function ManageClasses({ classes, isAdmin }: { classes: ManagedClass[]; isAdmin: boolean }) {
+const NOTICES: Record<string, { tone: "ok" | "error"; text: string }> = {
+  connected: { tone: "ok", text: "Google Meet is connected. New classes get their own meeting link automatically." },
+  denied: { tone: "error", text: "Google access wasn't allowed, so nothing changed." },
+  no_calendar: { tone: "error", text: "Google didn't grant Calendar access. Connect again and tick the Calendar permission." },
+  not_configured: { tone: "error", text: "Google isn't set up on this site yet (the Google keys are missing)." },
+  error: { tone: "error", text: "Connecting Google didn't work. Please try again." },
+};
+
+/** Connect (or disconnect) the Google account that owns the Meet links. */
+function GoogleConnect({ google, notice }: { google: GoogleState; notice: string | null }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const message = notice ? NOTICES[notice] : undefined;
+
+  const disconnect = async () => {
+    if (!window.confirm("Disconnect Google? Classes already scheduled keep their Meet links; new ones will need a link pasted in.")) return;
+    setBusy(true);
+    try {
+      await meFetch("/api/teach/google/disconnect", { body: {} });
+      toast("Google disconnected.");
+      router.replace("/dashboard/classes/manage");
+      router.refresh();
+    } catch (err) {
+      toast(failureMessage(err, "disconnect Google"), { tone: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section aria-labelledby="google-meet-title" className="dash-card space-y-3 p-5 sm:p-6">
+      {message && (
+        <p role={message.tone === "error" ? "alert" : "status"} className={`rounded-xl border p-3 text-sm ${message.tone === "ok" ? "border-[#6fbf8e]/50 text-[#9fdcb5]" : "border-[#e0796a]/50 text-[#f0a89c]"}`}>
+          {message.text}
+        </p>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h2 id="google-meet-title" className="font-semibold text-ink">
+            Google Meet links
+          </h2>
+          <p className="mt-0.5 text-sm text-ink-muted">
+            {google.email ? (
+              <>
+                Connected as <span className="text-ink">{google.email}</span>. Each new class gets a one hour Calendar event with its own Meet link.
+              </>
+            ) : (
+              "Connect your Google account once, and every class you schedule gets its own Meet link automatically."
+            )}
+          </p>
+        </div>
+        {google.email ? (
+          <button type="button" onClick={() => void disconnect()} disabled={busy} className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink hover:border-[#e0796a] disabled:opacity-60">
+            Disconnect
+          </button>
+        ) : google.available ? (
+          // A plain link: the browser goes to Google and comes back here.
+          <a href="/api/teach/google/connect" className="inline-flex min-h-11 items-center rounded-full bg-saffron px-5 text-sm font-semibold text-on-saffron">
+            Connect Google Meet
+          </a>
+        ) : (
+          <span className="text-sm text-ink-muted">Google isn&apos;t set up on this site.</span>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ManageClasses({ classes, isAdmin, google, notice }: { classes: ManagedClass[]; isAdmin: boolean; google: GoogleState; notice: string | null }) {
   const router = useRouter();
   const [editing, setEditing] = useState<Draft | null>(null);
   const [now] = useState(() => Date.now());
@@ -134,14 +242,25 @@ export function ManageClasses({ classes, isAdmin }: { classes: ManagedClass[]; i
   };
 
   const edit = (c: ManagedClass) =>
-    setEditing({ id: c.id, title: c.title, description: c.description ?? "", ...localParts(c.startsAt), meetingUrl: c.meetingUrl, recordingUrl: c.recordingUrl ?? "", teacherEmail: "" });
+    setEditing({
+      id: c.id,
+      title: c.title,
+      description: c.description ?? "",
+      ...localParts(c.startsAt),
+      linkMode: c.autoMeet ? "auto" : "own",
+      autoMeet: c.autoMeet,
+      meetingUrl: c.autoMeet ? "" : c.meetingUrl,
+      recordingUrl: c.recordingUrl ?? "",
+      teacherEmail: "",
+    });
 
   return (
     <div className="space-y-6">
+      <GoogleConnect google={google} notice={notice} />
       {editing ? (
-        <ClassForm key={editing.id ?? "new"} initial={editing} isAdmin={isAdmin} onDone={() => setEditing(null)} />
+        <ClassForm key={editing.id ?? "new"} initial={editing} isAdmin={isAdmin} google={google} onDone={() => setEditing(null)} />
       ) : (
-        <button type="button" onClick={() => setEditing(EMPTY)} className="min-h-12 rounded-full bg-saffron px-6 text-sm font-semibold text-on-saffron">
+        <button type="button" onClick={() => setEditing({ ...EMPTY, linkMode: google.email ? "auto" : "own" })} className="min-h-12 rounded-full bg-saffron px-6 text-sm font-semibold text-on-saffron">
           + New class
         </button>
       )}

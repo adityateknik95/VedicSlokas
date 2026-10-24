@@ -352,6 +352,26 @@ join.
 
 The rule lives in `getEntitlements`, like every other access rule.
 
+**Automatic Google Meet links:** a teacher clicks **Connect Google Meet** on Manage classes once.
+- After that, a class saved without a link gets a one-hour Google Calendar event with a new Meet
+  link on that teacher's Google account, so the teacher owns the meeting and admits students.
+- Changing the date or time moves the event, cancelling the class deletes it, and pasting your
+  own link instead retires it.
+- Only the refresh token is kept, encrypted with a key derived from `BETTER_AUTH_SECRET`
+  (`lib/secret-box.ts`). Disconnecting or deleting the account revokes it at Google.
+- Code: `lib/google-calendar.ts` (Google calls), `lib/class-meetings.ts` (scheduling), and the
+  routes `/api/teach/google/{connect,callback,disconnect}`.
+
+One-time Google Cloud setup, on the project that holds the sign-in OAuth client:
+1. APIs & Services → Library → enable **Google Calendar API**.
+2. Credentials → your OAuth client → Authorized redirect URIs → add
+   `https://<your-domain>/api/teach/google/callback` (and `http://localhost:3000/api/teach/google/callback`).
+3. OAuth consent screen → Data access (scopes) → add `.../auth/calendar.events`.
+   - While the app is unverified, Google shows "Google hasn't verified this app" to the teacher:
+     choose Advanced → continue.
+   - Keep the app's publishing status "In production". In "Testing", Google expires the connection
+     after 7 days.
+
 **Scheduling:** at `/dashboard/classes/manage` ("Manage classes" in the account menu).
 - Teachers create, edit and cancel their own classes.
 - Admins manage every class, and can set the teacher by email.
