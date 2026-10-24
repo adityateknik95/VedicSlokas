@@ -9,10 +9,8 @@ import { toast } from "@/lib/toast";
 type Mode = "upi" | "bank";
 
 const FREE = ["Every sloka, word by word", "Favourites, progress and your streak", "Sloka of the Day and Surprise me"];
-/** Be honest about what exists: the learning modules are still being prepared. */
-const PAID: { label: string; soon?: boolean }[] = [
-  { label: "Everything in Free" },
-  { label: "Live classes (coming soon)", soon: true },
+/** Be honest about what exists: notes and courses are still being prepared. */
+const SOON: { label: string; soon: boolean }[] = [
   { label: "PDF study notes (coming soon)", soon: true },
   { label: "Courses (coming soon)", soon: true },
 ];
@@ -57,7 +55,9 @@ function Status({ plan }: { plan: Plan }) {
 }
 
 /** Free and monthly side by side, then how to pay and where to report the reference. */
-export function UpgradeFlow({ plan, details, qrSrc, testing }: { plan: Plan; details: PaymentDetails; qrSrc: string | null; testing: boolean }) {
+export function UpgradeFlow({ plan, details, qrSrc, testing, classesFree }: { plan: Plan; details: PaymentDetails; qrSrc: string | null; testing: boolean; classesFree: boolean }) {
+  const free = classesFree ? [...FREE, "Live classes, free while we're starting out"] : FREE;
+  const paid = [{ label: "Everything in Free", soon: false }, ...(classesFree ? [] : [{ label: "Live classes", soon: false }]), ...SOON];
   const router = useRouter();
   const ids = useId();
   const methods: Mode[] = [...(details.upi ? (["upi"] as const) : []), ...(details.bank ? (["bank"] as const) : [])];
@@ -110,7 +110,7 @@ export function UpgradeFlow({ plan, details, qrSrc, testing }: { plan: Plan; det
           </h2>
           <p className="mt-1 text-ink-muted">₹0, always</p>
           <ul className="mt-5 space-y-2.5 text-sm text-ink">
-            {FREE.map((f) => (
+            {free.map((f) => (
               <li key={f} className="flex gap-3">
                 <Tick /> {f}
               </li>
@@ -125,7 +125,7 @@ export function UpgradeFlow({ plan, details, qrSrc, testing }: { plan: Plan; det
             <span className="display text-2xl text-ink">₹{details.priceInr}</span> a month
           </p>
           <ul className="mt-5 flex-1 space-y-2.5 text-sm text-ink">
-            {PAID.map((f) => (
+            {paid.map((f) => (
               <li key={f.label} className={`flex gap-3 ${f.soon ? "text-ink-muted" : ""}`}>
                 <Tick soon={f.soon} /> {f.label}
               </li>

@@ -27,6 +27,7 @@ export default async function UpgradePage() {
       details={details}
       qrSrc={qr ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qr)}` : null}
       testing={env().SUBSCRIPTIONS === "testers"}
+      classesFree={env().LIVE_CLASSES === "everyone"}
     />
   );
 }

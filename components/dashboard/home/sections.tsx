@@ -107,7 +107,7 @@ export async function ComingSoonRail({ userId }: { userId: string }) {
   return (
     <Section id="home-soon" eyebrow="Coming soon" title="Shaping what comes next">
       <p className="-mt-2 mb-5 max-w-2xl text-sm text-ink-muted">We are still shaping these. Tell us you want one and we will let you know.</p>
-      <ul className="grid gap-4 md:grid-cols-3">
+      <ul className="grid gap-4 md:grid-cols-2">
         {modulesFor("homeRail").map((m, i) => (
           <li key={m.key} style={{ ["--i" as string]: i }} className="dash-card dash-card-hover dash-enter relative flex flex-col overflow-hidden p-6">
             <Mandala variant="simple" className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 text-gold opacity-[0.07]" />
@@ -117,12 +117,6 @@ export async function ComingSoonRail({ userId }: { userId: string }) {
               </Link>
             </h3>
             <p className="mt-2 flex-1 text-sm text-ink-muted">{m.summary}</p>
-            {m.key === "classes" && (
-              <div className="mt-4 rounded-xl border border-dashed border-line px-4 py-3">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-ink-muted">Next class</p>
-                <p className="mt-0.5 text-sm text-ink">Class schedule coming soon.</p>
-              </div>
-            )}
             {m.feature && (
               <div className="relative z-10 mt-5">
                 <InterestToggle feature={m.feature} label={m.label} initial={interest.has(m.feature)} />

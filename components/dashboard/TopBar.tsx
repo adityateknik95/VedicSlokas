@@ -9,15 +9,18 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { broadcastAuth } from "@/lib/auth-channel";
 import { activeModule } from "@/lib/dashboard/modules";
 import { SEARCH_INPUT_ID } from "@/components/layout/KeyboardShortcuts";
+import type { ClassNotice } from "@/lib/classes";
 import { Avatar } from "./Avatar";
+import { ClassNoticesList, LiveClassPill } from "./classes/ClassNotices";
 import { Popover } from "./Popover";
 
-/** plan: may see the paid plan (SUBSCRIPTIONS); admin: may review payments. */
-export type ShellUser = { name: string; email: string; image: string | null; plan: boolean; admin: boolean };
+/** plan: may see the paid plan (SUBSCRIPTIONS); admin: may review payments; teach: may manage classes. */
+export type ShellUser = { name: string; email: string; image: string | null; plan: boolean; admin: boolean; teach: boolean };
 
 const TITLES: Record<string, string> = { "/dashboard/welcome": "Welcome", "/dashboard/upgrade": "Your plan" };
 
-export function TopBar({ user }: { user: ShellUser }) {
+export function TopBar({ user, notices, serverNow }: { user: ShellUser; notices: ClassNotice[]; serverNow: number }) {
+  const live = notices.find((n) => n.kind === "live");
   const pathname = usePathname();
   const router = useRouter();
   const [signingOut, startSignOut] = useTransition();
@@ -75,6 +78,8 @@ export function TopBar({ user }: { user: ShellUser }) {
           </svg>
         </button>
 
+        {live && <LiveClassPill notice={live} serverNow={serverNow} />}
+
         {user.plan && (
           <Link
             href="/dashboard/upgrade"
@@ -90,16 +95,22 @@ export function TopBar({ user }: { user: ShellUser }) {
         <ThemeToggle size="app" />
 
         <Popover
-          label="Announcements"
-          panelClassName="w-72 p-5"
+          label={notices.length ? `Announcements, ${notices.length} new` : "Announcements"}
+          panelClassName={notices.length ? "w-80 p-3" : "w-72 p-5"}
           button={
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z" />
-              <path d="M10 20.5a2 2 0 0 0 4 0" />
-            </svg>
+            <span className="relative">
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z" />
+                <path d="M10 20.5a2 2 0 0 0 4 0" />
+              </svg>
+              {notices.length > 0 && <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-saffron ring-2 ring-[var(--bg-2)]" />}
+            </span>
           }
         >
-          {() => (
+          {(close) =>
+            notices.length ? (
+              <ClassNoticesList notices={notices} onPick={close} />
+            ) : (
             <div className="text-center">
               <p className="deva text-2xl text-accent" lang="sa">
                 शान्तिः
@@ -107,7 +118,8 @@ export function TopBar({ user }: { user: ShellUser }) {
               <p className="mt-2 text-sm text-ink">All quiet for now.</p>
               <p className="mt-1 text-xs text-ink-muted">Announcements will appear here.</p>
             </div>
-          )}
+            )
+          }
         </Popover>
 
         <Popover label={`Account menu for ${user.name}`} panelClassName="w-72 p-2" button={<Avatar name={user.name} image={user.image} size="sm" />}>
@@ -135,6 +147,13 @@ export function TopBar({ user }: { user: ShellUser }) {
                   <li>
                     <Link href="/dashboard/upgrade" onClick={close} className="flex min-h-11 items-center rounded-xl px-3 text-sm text-ink hover:bg-surface-2">
                       Your plan
+                    </Link>
+                  </li>
+                )}
+                {user.teach && (
+                  <li>
+                    <Link href="/dashboard/classes/manage" onClick={close} className="flex min-h-11 items-center rounded-xl px-3 text-sm text-ink hover:bg-surface-2">
+                      Manage classes
                     </Link>
                   </li>
                 )}

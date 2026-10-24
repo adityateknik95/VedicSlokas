@@ -7,6 +7,7 @@ import { SIDEBAR_COOKIE } from "@/lib/dashboard/shell";
 import { dashboardUser, favouritesFor, prefsFor } from "@/lib/dashboard/state";
 import { hasRole } from "@/lib/session";
 import { canUseSubscriptions } from "@/lib/subscriptions";
+import { classNotices } from "@/lib/classes";
 
 export const metadata: Metadata = { title: { default: "Dashboard", template: "%s · Dashboard · VedicSlokas" }, robots: { index: false, follow: false }, alternates: { canonical: null } };
 // Per request: everything here depends on who is signed in.
@@ -18,11 +19,15 @@ export const dynamic = "force-dynamic";
  */
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const user = await dashboardUser("/dashboard");
-  const [jar, prefs, favourites] = await Promise.all([cookies(), prefsFor(user.id), favouritesFor(user.id)]);
+  const now = Date.now();
+  // The bell never breaks the page: no notices if the classes query fails.
+  const [jar, prefs, favourites, notices] = await Promise.all([cookies(), prefsFor(user.id), favouritesFor(user.id), classNotices(now).catch(() => [])]);
 
   return (
     <DashFrame
-      user={{ name: user.name, email: user.email, image: user.image ?? null, plan: canUseSubscriptions(user), admin: hasRole(user, ["admin"]) }}
+      user={{ name: user.name, email: user.email, image: user.image ?? null, plan: canUseSubscriptions(user), admin: hasRole(user, ["admin"]), teach: hasRole(user, ["teacher", "admin"]) }}
+      notices={notices}
+      serverNow={now}
       initiallyCollapsed={jar.get(SIDEBAR_COOKIE)?.value === "collapsed"}
       reduceMotion={prefs.motion === "reduce"}
     >

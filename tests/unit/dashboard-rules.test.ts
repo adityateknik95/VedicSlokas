@@ -49,9 +49,9 @@ describe("module registry", () => {
     expect(tabs).toEqual(["home", "library", "surprise", "favourites", "settings"]);
   });
 
-  it("puts the three coming-soon modules on the home rail, each with an interest signal", () => {
+  it("puts the coming-soon modules on the home rail, each with an interest signal", () => {
     const rail = modulesFor("homeRail");
-    expect(rail.map((m) => m.key)).toEqual(["classes", "notes", "courses"]);
+    expect(rail.map((m) => m.key)).toEqual(["notes", "courses"]);
     for (const m of rail) {
       expect(m.status).toBe("soon");
       expect(m.feature).toBeTruthy();
@@ -86,8 +86,8 @@ describe("entitlement gating", () => {
     expect(moduleAccess({ status: "live" }, NO_ENTITLEMENTS)).toBe("open");
   });
 
-  it("grants nothing today (no subscriptions yet)", async () => {
-    expect(await getEntitlements("anyone")).toEqual({ liveClasses: false, notes: false, courses: false });
+  it("without a plan: live classes only, while they are open to everyone (the default)", async () => {
+    expect(await getEntitlements("anyone")).toEqual({ liveClasses: true, notes: false, courses: false });
   });
 });
 

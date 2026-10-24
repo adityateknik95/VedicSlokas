@@ -44,3 +44,32 @@ export const deleteBody = z.object({ confirm: z.literal("DELETE") }).strict();
 /** A reported manual payment. The reference is normalised and checked in lib/subscriptions. */
 export const paymentBody = z.object({ mode: z.enum(PAYMENT_MODES), reference: z.string().max(60) }).strict();
 export const reviewBody = z.object({ paymentId: z.uuid(), approve: z.boolean() }).strict();
+
+/** No markup or control characters in short labels. */
+const plainText = (v: string) => !/[<>\u0000-\u001f]/.test(v);
+
+/** Joining a live class. */
+export const joinBody = z.object({ classId: z.uuid() }).strict();
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .nullable()
+    .transform((v) => v || null);
+
+/** Creating (no id) or editing (id) a live class. Links are checked again in lib/classes. */
+export const classBody = z
+  .object({
+    id: z.uuid().optional(),
+    title: z.string().trim().min(2).max(120).refine(plainText, "No angle brackets or control characters"),
+    description: optionalText(1000),
+    startsAt: z.iso.datetime({ offset: true }).transform((v) => new Date(v)),
+    meetingUrl: z.string().trim().max(500),
+    recordingUrl: optionalText(500),
+    teacherEmail: optionalText(254),
+  })
+  .strict();
+export const cancelClassBody = z.object({ id: z.uuid() }).strict();

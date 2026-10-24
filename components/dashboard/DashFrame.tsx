@@ -5,6 +5,7 @@ import { SIDEBAR_COOKIE } from "@/lib/dashboard/shell";
 import { Sidebar } from "./Sidebar";
 import { SurpriseHost } from "./SurpriseHost";
 import { TabBar } from "./TabBar";
+import type { ClassNotice } from "@/lib/classes";
 import { TopBar, type ShellUser } from "./TopBar";
 
 /**
@@ -12,7 +13,9 @@ import { TopBar, type ShellUser } from "./TopBar";
  * renders the right width with no shift), top bar, content, tab bar (phones), and the
  * Surprise me host that any button can open.
  */
-export function DashFrame({ user, initiallyCollapsed, reduceMotion, children }: { user: ShellUser; initiallyCollapsed: boolean; reduceMotion: boolean; children: ReactNode }) {
+type Props = { user: ShellUser; notices: ClassNotice[]; serverNow: number; initiallyCollapsed: boolean; reduceMotion: boolean; children: ReactNode };
+
+export function DashFrame({ user, notices, serverNow, initiallyCollapsed, reduceMotion, children }: Props) {
   const [collapsed, setCollapsed] = useState(initiallyCollapsed);
   const [animate, setAnimate] = useState(false);
 
@@ -30,7 +33,7 @@ export function DashFrame({ user, initiallyCollapsed, reduceMotion, children }: 
       </a>
       <Sidebar collapsed={collapsed} onToggle={toggle} />
       <div className="dash-column">
-        <TopBar user={user} />
+        <TopBar user={user} notices={notices} serverNow={serverNow} />
         <main id="dash-content" tabIndex={-1} className="dash-main outline-none">
           {children}
         </main>

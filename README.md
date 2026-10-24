@@ -328,3 +328,45 @@ update "user" set role = 'admin' where email = 'you@example.com';
 - Set the `PAYMENT_*` details in Vercel (until then the page says payment isn't set up yet).
 - Add the price, what it includes and the refund policy to the Terms.
 - Turn the modules' status to `"live"` as their content arrives.
+
+## Live classes
+
+Classes run on **Zoom or Google Meet**. The dashboard holds the timetable and decides who may
+join.
+
+**For students:**
+- `/dashboard/classes` shows what's live now, coming up (next 30 days), and recent classes with
+  their recordings. Times are shown in the student's timezone.
+- **Join class** works from 10 minutes before the start until the end. The meeting link is
+  handed out only by `POST /api/me/classes/join`, never written into a page, and each join is
+  counted once.
+- Every class is one hour. In its last 15 minutes a countdown ("Ends in 14:59") appears on the
+  class card, on the class page (`/dashboard/classes/<id>`, with a large clock the teacher can
+  keep open or share) and in a pill in the top bar.
+- The bell lists classes that are live, starting within a day, or newly scheduled. Home shows
+  the next class.
+
+**Who may join:** `LIVE_CLASSES` in the environment.
+- `everyone` (the default): every signed-in student, while classes are a free trial.
+- `plan`: students with an active monthly plan. Others see "Included in the monthly plan".
+
+The rule lives in `getEntitlements`, like every other access rule.
+
+**Scheduling:** at `/dashboard/classes/manage` ("Manage classes" in the account menu).
+- Teachers create, edit and cancel their own classes.
+- Admins manage every class, and can set the teacher by email.
+- Only `https` Google Meet and Zoom links are accepted.
+- Saves and cancellations are recorded in `audit_log`.
+
+To make someone a teacher, run in the Neon SQL editor:
+
+```sql
+update "user" set role = 'teacher' where email = 'teacher@example.com';
+```
+
+**Code:**
+- Logic: `lib/classes.ts`, with timing in `lib/classes-time.ts` (shared by server and browser).
+- UI: `components/dashboard/classes/*`.
+- Data: `live_class` and `class_attendance`, from migration `drizzle/0003_live_classes.sql`.
+- Tests: `tests/unit/classes*.test.ts`.
+

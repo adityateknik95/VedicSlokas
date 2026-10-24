@@ -53,6 +53,8 @@ const schema = z
      * "testers" (admins and SUBSCRIPTION_TESTERS only) or "off".
      */
     SUBSCRIPTIONS: z.enum(["off", "testers", "on"]).default("on"),
+    /** Who may join live classes: "everyone" signed in (the free trial period) or "plan" (subscribers). */
+    LIVE_CLASSES: z.enum(["everyone", "plan"]).default("everyone"),
     /** Comma separated emails that may test the paid plan while SUBSCRIPTIONS=testers. */
     SUBSCRIPTION_TESTERS: optional,
     /** Monthly price in whole rupees. */

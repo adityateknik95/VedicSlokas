@@ -22,6 +22,13 @@
       "when": 1792081356927,
       "tag": "0002_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792818583140,
+      "tag": "0003_live_classes",
+      "breakpoints": true
     }
   ]
 }

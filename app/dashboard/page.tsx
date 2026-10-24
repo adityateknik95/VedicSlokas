@@ -8,7 +8,8 @@ import { SurpriseLauncher } from "@/components/dashboard/SurpriseLauncher";
 import { FavouritesStrip } from "@/components/dashboard/home/FavouritesStrip";
 import { BrowseByFeeling, ComingSoonRail, ContinueExploring, ProgressSummary } from "@/components/dashboard/home/sections";
 import { TodaySloka } from "@/components/dashboard/home/TodaySloka";
-import { dashboardUser, prefsFor } from "@/lib/dashboard/state";
+import { NextClassCard } from "@/components/dashboard/classes/NextClassCard";
+import { dashboardUser, entitlementsFor, prefsFor } from "@/lib/dashboard/state";
 import { safeTimeZone } from "@/lib/dashboard/streak";
 import { allSummaries } from "@/lib/dashboard/summaries";
 import { getSlokaOfTheDay } from "@/lib/slokas";
@@ -27,6 +28,7 @@ export default async function DashboardHome() {
   if (!prefs.onboardedAt) redirect("/dashboard/welcome");
 
   const tz = safeTimeZone(prefs.timezone);
+  const entitlements = await entitlementsFor(user.id);
   const now = new Date();
   const serverHour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: tz }).format(now));
   const dateLabel = new Intl.DateTimeFormat("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(now);
@@ -55,6 +57,11 @@ export default async function DashboardHome() {
           </div>
         </section>
       </div>
+
+      {/* No placeholder: the card only appears once a class is scheduled. */}
+      <Suspense fallback={null}>
+        <NextClassCard tz={tz} entitled={entitlements.liveClasses} />
+      </Suspense>
 
       <Suspense fallback={<SectionSkeleton title="your progress" height="h-[19rem] sm:h-[11.5rem]" />}>
         <ProgressSummary userId={user.id} />

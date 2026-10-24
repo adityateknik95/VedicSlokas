@@ -4,6 +4,7 @@ import type { Feature } from "@/db/schema";
 import { Mandala } from "@/components/motifs";
 import { getModule, moduleAccess, type ModuleKey } from "@/lib/dashboard/modules";
 import { dashboardUser, entitlementsFor, interestFor } from "@/lib/dashboard/state";
+import { canUseSubscriptions } from "@/lib/subscriptions";
 import { DashIcon } from "./DashIcon";
 import { InterestToggle } from "./InterestToggle";
 import { LockedFeature } from "./LockedFeature";
@@ -30,12 +31,12 @@ export async function ModulePage({ moduleKey, children }: { moduleKey: ModuleKey
   return (
     <div className="dash-page">
       <header className="dash-enter mb-8">
-        <p className="eyebrow">{access === "soon" ? "Coming soon" : "Included in plans"}</p>
+        <p className="eyebrow">{access === "soon" ? "Coming soon" : access === "open" ? "Open to you" : "Included in plans"}</p>
         <h1 className="display mt-2 text-4xl text-ink sm:text-5xl">{module.label}</h1>
       </header>
 
       {access === "open" && children}
-      {access === "locked" && <LockedFeature title={module.label} summary={module.summary} icon={icon} />}
+      {access === "locked" && <LockedFeature title={module.label} summary={module.summary} icon={icon} planHref={canUseSubscriptions(user) ? "/dashboard/upgrade" : null} />}
       {access === "soon" && (
         <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr]">
           <section aria-labelledby="soon-what" className="dash-card dash-enter relative overflow-hidden p-7 sm:p-10">
@@ -74,12 +75,6 @@ export async function ModulePage({ moduleKey, children }: { moduleKey: ModuleKey
                 </li>
               ))}
             </ul>
-            {moduleKey === "classes" && (
-              <div className="mt-7 rounded-2xl border border-dashed border-line px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-muted">Next class</p>
-                <p className="mt-1 text-ink">Class schedule coming soon.</p>
-              </div>
-            )}
             <div className="dash-hairline my-7" />
             <p className="text-sm text-ink-muted">Until then, every sloka in the library is open to you.</p>
             <Link href="/dashboard/library" className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-line px-5 text-sm font-semibold text-ink hover:border-gold">

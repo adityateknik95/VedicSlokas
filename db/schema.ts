@@ -106,6 +106,8 @@ export const auditEvent = pgEnum("audit_event", [
   "payment_submitted",
   "payment_verified",
   "payment_rejected",
+  "class_saved",
+  "class_cancelled",
 ]);
 
 /** Security-relevant auth events. Never stores tokens. */
@@ -257,4 +259,45 @@ export const subscriptionPayment = pgTable(
       .on(t.userId)
       .where(sql`${t.status} = 'pending'`),
   ],
+);
+
+/**
+ * A live class, held on Zoom or Google Meet. The meeting link is only handed out (by the
+ * join API) around the class time, never rendered into pages. Teachers manage their own
+ * classes; admins manage all.
+ */
+export const liveClass = pgTable(
+  "live_class",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    teacherId: text("teacher_id").references(() => user.id, { onDelete: "set null" }),
+    /** Shown to students; kept even if the teacher's account goes. */
+    teacherName: text("teacher_name").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    durationMin: integer("duration_min").notNull().default(60),
+    meetingUrl: text("meeting_url").notNull(),
+    recordingUrl: text("recording_url"),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("live_class_starts_at_idx").on(t.startsAt)],
+);
+
+/** Who joined which class (first join only), for the teacher's count. */
+export const classAttendance = pgTable(
+  "class_attendance",
+  {
+    classId: text("class_id")
+      .notNull()
+      .references(() => liveClass.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.classId, t.userId] })],
 );

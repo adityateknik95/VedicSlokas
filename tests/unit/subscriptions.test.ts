@@ -73,7 +73,8 @@ describe("admin review", () => {
   it("approval grants a month, renewals extend it, and only one review wins", async () => {
     const admin = await makeUser("admin");
     const s = await makeUser();
-    expect(await getEntitlements(s.id)).toEqual({ liveClasses: false, notes: false, courses: false });
+    // Without a plan: live classes only (open to everyone by default), no notes or courses.
+    expect(await getEntitlements(s.id)).toEqual({ liveClasses: true, notes: false, courses: false });
 
     const now = new Date("2026-10-15T08:00:00Z");
     const first = await submitPayment(s.id, "upi", nextUtr());

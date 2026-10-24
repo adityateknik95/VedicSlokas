@@ -88,12 +88,12 @@ test("opening a sloka and marking it learned shows up in progress", async ({ pag
 test("Notify me is remembered", async ({ page }) => {
   await signUpAndIn(page, "Nila");
   await skipOnboarding(page);
-  await page.goto("/dashboard/classes");
+  await page.goto("/dashboard/notes");
   await page.getByRole("button", { name: /Notify me/ }).click();
   await expect(page.getByRole("button", { name: /notified/ })).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   await expect(page.getByRole("button", { name: /notified/ })).toHaveAttribute("aria-pressed", "true");
-  expect((await api<{ features: string[] }>(page, "/api/me/interest")).body.features).toEqual(["live_classes"]);
+  expect((await api<{ features: string[] }>(page, "/api/me/interest")).body.features).toEqual(["notes"]);
 });
 
 test("one student can never read or change another student's data", async ({ browser }) => {
@@ -192,4 +192,23 @@ test("the paid plan is only visible to testers, who can report a payment", async
   const plan = await api<{ plan: { pending: { id: string } } }>(t, "/api/me/plan");
   const self = await api(t, "/api/admin/payments/review", { body: { paymentId: plan.body.plan.pending.id, approve: true } });
   expect(self.status).toBe(403);
+});
+
+test("live classes: open to every student, links only through the join API, managing is for teachers", async ({ page }) => {
+  await signUpAndIn(page, "Uma");
+  await skipOnboarding(page);
+  await page.getByRole("link", { name: "Live classes" }).first().click();
+  await expect(page).toHaveURL(/\/dashboard\/classes$/);
+  await expect(page.getByText("No classes scheduled yet")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Manage classes" })).toHaveCount(0);
+
+  // No class, no link; junk is refused.
+  expect((await api(page, "/api/me/classes/join", { body: { classId: "00000000-0000-4000-8000-000000000000" } })).status).toBe(404);
+  expect((await api(page, "/api/me/classes/join", { body: { classId: "../etc" } })).status).toBe(400);
+
+  // Students cannot schedule classes or open the manage page.
+  const create = await api(page, "/api/teach/classes", { body: { title: "Mine", startsAt: new Date().toISOString(), meetingUrl: "https://meet.google.com/abc-defg-hij" } });
+  expect(create.status).toBe(403);
+  await page.goto("/dashboard/classes/manage");
+  await expect(page).toHaveURL(/\/dashboard\?denied=1/);
 });

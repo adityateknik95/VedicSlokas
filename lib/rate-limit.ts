@@ -30,6 +30,10 @@ export const RULES = {
   meAccountByUser: { limit: 10, windowSec: 60 * 60 },
   /** Payment reports per user (a real one is monthly; this only stops floods). */
   mePaymentByUser: { limit: 5, windowSec: 60 * 60 },
+  /** Live class joins per user. */
+  meJoinByUser: { limit: 60, windowSec: 10 * 60 },
+  /** Class edits per teacher or admin. */
+  teachWriteByUser: { limit: 60, windowSec: 60 },
   /** Payment reviews per admin. */
   adminReviewByUser: { limit: 120, windowSec: 60 },
 } as const satisfies Record<string, Rule>;

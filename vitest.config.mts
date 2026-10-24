@@ -16,6 +16,8 @@ export default defineConfig({
     // Each test file gets a fresh in-memory Postgres; no real services are touched.
     env: { PGLITE_DIR: "memory", BETTER_AUTH_URL: "http://localhost:3000", NODE_ENV: "test" },
     testTimeout: 30_000,
+    // Several files migrate their own in-memory database at once; give set-up room to breathe.
+    hookTimeout: 60_000,
     pool: "forks",
   },
 });
