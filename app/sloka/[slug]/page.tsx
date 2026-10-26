@@ -7,6 +7,7 @@ import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { AudioButton } from "@/components/sloka/AudioButton";
 import { ShareActions } from "@/components/sloka/ShareActions";
 import { SlokaAccount } from "@/components/sloka/SlokaAccount";
+import { SlokaPersonal } from "@/components/sloka/SlokaPersonal";
 import { StoryCard } from "@/components/sloka/StoryCard";
 import { SlokaCard } from "@/components/library/SlokaCard";
 import { getRelated, getSloka, slokas } from "@/lib/slokas";
@@ -120,7 +121,7 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
             <AudioButton src={s.audio} title={s.title} />
             <FavoriteButton slug={s.slug} title={s.title} />
             <ShareActions title={s.title} text={copyText} path={`/sloka/${s.slug}`} />
-            {/* Signed-in readers only, after hydration: records the view, offers "Mark as learned". */}
+            {/* Signed-in readers only, after hydration: records the view; Mark as learned; Save to collection. */}
             <SlokaAccount slug={s.slug} title={s.title} />
           </div>
           <p className="mt-6 text-center">
@@ -131,6 +132,8 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
               Read it in ಕನ್ನಡ · हिन्दी · தமிழ் · తెలుగు · മലയാളം <span aria-hidden="true">→</span>
             </Link>
           </p>
+          {/* Signed-in readers only: the verse in their script and language, and their private note. */}
+          <SlokaPersonal slug={s.slug} />
         </Container>
       </header>
 

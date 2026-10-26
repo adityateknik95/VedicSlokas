@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { getDb, schema } from "@/db";
-import { FEATURES, type Feature } from "@/db/schema";
+import { FEATURES, type Feature, type Goal, type MeaningLang, type ReadingScript } from "@/db/schema";
 import { isSlokaSlug } from "@/lib/slokas";
 import { THEMES, type Theme } from "@/lib/types";
 import { mergeFavourites } from "./favourites-merge";
@@ -140,9 +140,30 @@ export async function listActivityDays(userId: string, sinceDay: string): Promis
 /* ───────────────────────── Preferences ───────────────────────── */
 
 export type MotionPref = "system" | "reduce";
-export type Prefs = { interests: Theme[]; dailyEmail: boolean; onboardedAt: string | null; timezone: string | null; motion: MotionPref };
+export type Prefs = {
+  interests: Theme[];
+  dailyEmail: boolean;
+  onboardedAt: string | null;
+  timezone: string | null;
+  motion: MotionPref;
+  script: ReadingScript;
+  meaningLang: MeaningLang;
+  goal: Goal | null;
+  /** 0–23 in their timezone; null = no time chosen yet. */
+  reminderHour: number | null;
+};
 
-export const DEFAULT_PREFS: Prefs = { interests: [], dailyEmail: false, onboardedAt: null, timezone: null, motion: "system" };
+export const DEFAULT_PREFS: Prefs = {
+  interests: [],
+  dailyEmail: false,
+  onboardedAt: null,
+  timezone: null,
+  motion: "system",
+  script: "devanagari",
+  meaningLang: "en",
+  goal: null,
+  reminderHour: null,
+};
 
 const asThemes = (values: readonly string[]) => values.filter((v): v is Theme => (THEMES as readonly string[]).includes(v));
 
@@ -156,10 +177,24 @@ export async function getPrefs(userId: string): Promise<Prefs> {
     onboardedAt: row.onboardedAt?.toISOString() ?? null,
     timezone: row.timezone,
     motion: row.motion === "reduce" ? "reduce" : "system",
+    script: row.script,
+    meaningLang: row.meaningLang,
+    goal: row.goal,
+    reminderHour: row.reminderHour,
   };
 }
 
-export type PrefsPatch = Partial<{ interests: Theme[]; dailyEmail: boolean; timezone: string; motion: MotionPref; onboarded: true }>;
+export type PrefsPatch = Partial<{
+  interests: Theme[];
+  dailyEmail: boolean;
+  timezone: string;
+  motion: MotionPref;
+  onboarded: true;
+  script: ReadingScript;
+  meaningLang: MeaningLang;
+  goal: Goal | null;
+  reminderHour: number | null;
+}>;
 
 export async function savePrefs(userId: string, patch: PrefsPatch, now = new Date()): Promise<Prefs> {
   const db = await getDb();
@@ -168,6 +203,10 @@ export async function savePrefs(userId: string, patch: PrefsPatch, now = new Dat
     ...(patch.dailyEmail !== undefined ? { dailyEmail: patch.dailyEmail } : {}),
     ...(patch.timezone ? { timezone: safeTimeZone(patch.timezone) } : {}),
     ...(patch.motion ? { motion: patch.motion } : {}),
+    ...(patch.script ? { script: patch.script } : {}),
+    ...(patch.meaningLang ? { meaningLang: patch.meaningLang } : {}),
+    ...(patch.goal !== undefined ? { goal: patch.goal } : {}),
+    ...(patch.reminderHour !== undefined ? { reminderHour: patch.reminderHour } : {}),
     ...(patch.onboarded ? { onboardedAt: now } : {}),
     updatedAt: now,
   };

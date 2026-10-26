@@ -7,7 +7,7 @@ import { EmptyState, Section, SectionError, SectionSkeleton } from "@/components
 import { StreakCalendar } from "@/components/dashboard/StreakCalendar";
 import { dashboardUser, studentState } from "@/lib/dashboard/state";
 import { computeStreak } from "@/lib/dashboard/streak";
-import { getSloka, slokas, SOURCES } from "@/lib/slokas";
+import { getSloka, slokas, SOURCES, THEMES, themeInfo } from "@/lib/slokas";
 
 export const metadata: Metadata = { title: "Progress" };
 
@@ -98,6 +98,37 @@ async function ProgressBody({ userId }: { userId: string }) {
             );
           })}
         </div>
+      </Section>
+
+      <Section id="by-theme-title" title="By theme">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {THEMES.map((t) => {
+            const all = slokas.filter((s) => s.themes.includes(t));
+            const seen = all.filter((s) => bySlug.has(s.slug)).length;
+            const learnedHere = all.filter((s) => bySlug.get(s.slug)?.learnedAt).length;
+            return (
+              <li key={t} className="dash-card p-5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <Link href={`/dashboard/library?theme=${t}`} className="flex min-h-11 items-center gap-2 font-semibold text-ink hover:text-accent">
+                    <span lang="sa" aria-hidden="true" className="deva text-lg text-accent">
+                      {themeInfo[t].devanagari}
+                    </span>
+                    {themeInfo[t].label}
+                  </Link>
+                  <span className="text-sm text-ink-muted">
+                    {seen}/{all.length}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line" aria-hidden="true">
+                  <div className="h-full rounded-full bg-saffron" style={{ width: `${(seen / Math.max(1, all.length)) * 100}%` }} />
+                </div>
+                <p className="mt-2 text-xs text-ink-muted">
+                  {seen} of {all.length} explored · {learnedHere} learned
+                </p>
+              </li>
+            );
+          })}
+        </ul>
       </Section>
 
       <Section id="history" title="Recently viewed">

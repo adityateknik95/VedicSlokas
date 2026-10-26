@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { LearnedToggle } from "@/components/dashboard/LearnedToggle";
-import { browserTimeZone, hasSessionHint, meFetch } from "@/lib/dashboard/client";
+import { browserTimeZone, hasSessionHint } from "@/lib/dashboard/client";
+import { CollectionPicker } from "./CollectionPicker";
+import { useSlokaAccount } from "./useSlokaAccount";
 
 const VIEW_DELAY_MS = 1500;
 
@@ -12,20 +14,16 @@ function localDay(): string {
 }
 
 /**
- * The only account-aware part of the static sloka page. For signed-in readers, after
- * hydration it records the view (once per sloka per day, after a short read, by sendBeacon
- * so it survives navigation) and shows "Mark as learned". Guests get nothing and no requests.
+ * The account-aware buttons on the static sloka page. For signed-in readers, after hydration
+ * it records the view (once per sloka per day, after a short read, by sendBeacon so it
+ * survives navigation) and shows "Mark as learned" and "Save to collection". Guests get
+ * nothing and no requests.
  */
 export function SlokaAccount({ slug, title }: { slug: string; title: string }) {
-  const [learned, setLearned] = useState<boolean | null>(null);
+  const state = useSlokaAccount(slug);
 
   useEffect(() => {
     if (!hasSessionHint()) return;
-    const controller = new AbortController();
-    meFetch<{ favourite: boolean; learnedAt: string | null }>(`/api/me/progress?slug=${encodeURIComponent(slug)}`, { signal: controller.signal })
-      .then((s) => setLearned(Boolean(s.learnedAt)))
-      .catch(() => undefined);
-
     const key = `vedicslokas:viewed:${slug}`;
     const timer = setTimeout(() => {
       try {
@@ -38,13 +36,14 @@ export function SlokaAccount({ slug, title }: { slug: string; title: string }) {
       const sent = typeof navigator.sendBeacon === "function" && navigator.sendBeacon("/api/me/progress/view", new Blob([body], { type: "application/json" }));
       if (!sent) void fetch("/api/me/progress/view", { method: "POST", body, headers: { "Content-Type": "application/json" }, keepalive: true, credentials: "same-origin" }).catch(() => undefined);
     }, VIEW_DELAY_MS);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [slug]);
 
-  if (learned === null) return null;
-  return <LearnedToggle slug={slug} title={title} initial={learned} />;
+  if (!state) return null;
+  return (
+    <>
+      <LearnedToggle slug={slug} title={title} initial={Boolean(state.learnedAt)} />
+      <CollectionPicker slug={slug} title={title} initial={state.collections} />
+    </>
+  );
 }

@@ -65,7 +65,19 @@ export default async function SettingsPage() {
       </Panel>
 
       <Panel id="prefs-title" title="Preferences">
-        <PreferencesForm prefs={{ interests: prefs.interests, dailyEmail: prefs.dailyEmail, timezone: prefs.timezone, motion: prefs.motion }} themes={themes} />
+        <PreferencesForm
+          prefs={{
+            interests: prefs.interests,
+            dailyEmail: prefs.dailyEmail,
+            timezone: prefs.timezone,
+            motion: prefs.motion,
+            script: prefs.script,
+            meaningLang: prefs.meaningLang,
+            goal: prefs.goal,
+            reminderHour: prefs.reminderHour,
+          }}
+          themes={themes}
+        />
       </Panel>
 
       <Panel id="data-title" title="Privacy and data">

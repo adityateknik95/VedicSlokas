@@ -4,6 +4,7 @@ import { json, meRoute, readBody } from "@/lib/dashboard/api";
 import { pickSurprise } from "@/lib/dashboard/surprise";
 import { getSloka, slokas } from "@/lib/slokas";
 import type { SurpriseSloka } from "@/lib/dashboard/types";
+import { isPersonalised, readingFor } from "@/lib/reading";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export const POST = meRoute(
       citation: s.reference.citation,
       source: s.source,
       unseen: !viewed.has(s.slug),
+      reading: isPersonalised(prefs.script, prefs.meaningLang) ? readingFor(s, prefs.script, prefs.meaningLang) : null,
     };
     return json({ sloka });
   },

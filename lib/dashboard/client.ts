@@ -20,7 +20,7 @@ export function goToLogin(): void {
   window.location.assign(`/login?callbackUrl=${encodeURIComponent(here)}&expired=1`);
 }
 
-export async function meFetch<T>(path: string, init: { method?: "GET" | "POST" | "PATCH"; body?: unknown; keepalive?: boolean; signal?: AbortSignal } = {}): Promise<T> {
+export async function meFetch<T>(path: string, init: { method?: "GET" | "POST" | "PATCH" | "PUT"; body?: unknown; keepalive?: boolean; signal?: AbortSignal } = {}): Promise<T> {
   let response: Response;
   try {
     response = await fetch(path, {

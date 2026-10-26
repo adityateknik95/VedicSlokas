@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FEATURES, PAYMENT_MODES } from "@/db/schema";
+import { FEATURES, GOALS, MEANING_LANGS, PAYMENT_MODES, READING_SCRIPTS } from "@/db/schema";
 import { isSlokaSlug } from "@/lib/slokas";
 import { THEMES } from "@/lib/types";
 import { safeTimeZone } from "./streak";
@@ -26,6 +26,10 @@ export const prefsBody = z
     timezone: timeZone,
     motion: z.enum(["system", "reduce"]),
     onboarded: z.literal(true),
+    script: z.enum(READING_SCRIPTS),
+    meaningLang: z.enum(MEANING_LANGS),
+    goal: z.enum(GOALS).nullable(),
+    reminderHour: z.number().int().min(0).max(23).nullable(),
   })
   .partial()
   .strict();
@@ -74,3 +78,14 @@ export const classBody = z
   })
   .strict();
 export const cancelClassBody = z.object({ id: z.uuid() }).strict();
+
+/** A collection's name: short, plain text. */
+const collectionName = z.string().trim().min(1).max(40).refine(plainText, "Please use letters, numbers and simple punctuation");
+export const collectionBody = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("create"), name: collectionName }).strict(),
+  z.object({ action: z.literal("rename"), id: z.uuid(), name: collectionName }).strict(),
+  z.object({ action: z.literal("delete"), id: z.uuid() }).strict(),
+]);
+export const collectionItemBody = z.object({ collectionId: z.uuid(), slug: slugSchema, on: z.boolean() }).strict();
+/** Notes are plain text; the page renders them as text, never as HTML. */
+export const noteBody = z.object({ slug: slugSchema, body: z.string().max(2000) }).strict();

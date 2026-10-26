@@ -1,3 +1,5 @@
+import type { Reading } from "@/lib/reading";
+
 /** Shapes returned by /api/me/* that browser code reads. */
 
 export type SurpriseSloka = {
@@ -10,4 +12,6 @@ export type SurpriseSloka = {
   source: string;
   /** True when the student has never opened it before. */
   unseen: boolean;
+  /** The verse in the student's script and language, when they chose other than the default. */
+  reading: Reading | null;
 };

@@ -4,6 +4,7 @@ import { CompactSlokaCard } from "@/components/dashboard/CompactSlokaCard";
 import { InterestToggle } from "@/components/dashboard/InterestToggle";
 import { ProgressRing } from "@/components/dashboard/ProgressRing";
 import { EmptyState, Section, SectionError } from "@/components/dashboard/Section";
+import { WeekStrip } from "@/components/dashboard/WeekStrip";
 import { modulesFor } from "@/lib/dashboard/modules";
 import { studentState } from "@/lib/dashboard/state";
 import { computeStreak, dayKey } from "@/lib/dashboard/streak";
@@ -46,6 +47,9 @@ export async function ProgressSummary({ userId }: { userId: string }) {
             </dd>
           </div>
         </dl>
+        <div className="sm:col-span-2">
+          <WeekStrip activeDays={state.activeDays} today={state.today} />
+        </div>
       </div>
     </Section>
   );
@@ -82,11 +86,13 @@ export async function ContinueExploring({ userId }: { userId: string }) {
   );
 }
 
-export function BrowseByFeeling() {
+/** Feelings to browse by; `lead` puts one first (peace, for those here for calm). */
+export function BrowseByFeeling({ lead }: { lead?: (typeof THEMES)[number] }) {
+  const themes = lead ? [lead, ...THEMES.filter((t) => t !== lead)] : THEMES;
   return (
     <Section id="home-feeling" title="Browse by feeling">
       <ul className="flex flex-wrap gap-2.5">
-        {THEMES.map((t) => (
+        {themes.map((t) => (
           <li key={t}>
             <Link href={`/dashboard/library?theme=${t}`} className="dash-chip">
               <span lang="sa" aria-hidden="true" className="deva text-base leading-none text-accent">

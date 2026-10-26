@@ -101,15 +101,29 @@ export function SurprisePanel({ returnFocus }: { returnFocus: HTMLElement | null
                 {state.sloka.citation}
                 {state.sloka.unseen && <span className="ml-2 rounded-full border border-gold/50 px-2 py-0.5 text-[0.6rem] tracking-[0.16em] text-accent">New to you</span>}
               </p>
-              <p lang="sa" className="deva mt-5 text-[1.55rem] leading-[1.9] text-accent [overflow-wrap:anywhere] sm:text-[2rem]">
-                {state.sloka.devanagari.split("\n").map((line, i) => (
+              <p
+                lang={state.sloka.reading?.scriptLang ?? "sa"}
+                className={`mt-5 text-[1.55rem] leading-[1.9] text-accent [overflow-wrap:anywhere] sm:text-[2rem] ${state.sloka.reading?.script === "iast" ? "iast" : "deva"}`}
+              >
+                {(state.sloka.reading?.verse ?? state.sloka.devanagari).split("\n").map((line, i) => (
                   <span key={i} className="block">
                     {line}
                   </span>
                 ))}
               </p>
-              <p className="iast mt-3 text-base text-ink-muted sm:text-lg">{state.sloka.iast.replace(/ *\|+ */g, " ").split("\n").join(" · ")}</p>
-              <p className="display mx-auto mt-6 max-w-lg text-xl leading-snug text-ink sm:text-2xl">“{state.sloka.translation}”</p>
+              {state.sloka.reading?.script !== "iast" && (
+                <p className="iast mt-3 text-base text-ink-muted sm:text-lg">{state.sloka.iast.replace(/ *\|+ */g, " ").split("\n").join(" · ")}</p>
+              )}
+              {state.sloka.reading && state.sloka.reading.meaningLang !== "en" ? (
+                <>
+                  <p className="mx-auto mt-6 max-w-lg text-xl leading-snug text-ink sm:text-2xl">{state.sloka.reading.meaning}</p>
+                  <p className="mx-auto mt-2 max-w-lg text-sm text-ink-muted">
+                    “{state.sloka.translation}”{!state.sloka.reading.meaningVerified && " · the translation above is a draft"}
+                  </p>
+                </>
+              ) : (
+                <p className="display mx-auto mt-6 max-w-lg text-xl leading-snug text-ink sm:text-2xl">“{state.sloka.translation}”</p>
+              )}
               <p className="mt-3 text-sm text-ink-muted">{state.sloka.title}</p>
             </article>
           )}

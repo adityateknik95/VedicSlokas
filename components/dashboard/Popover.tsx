@@ -11,11 +11,16 @@ export function Popover({
   button,
   children,
   panelClassName = "",
+  buttonClassName,
+  align = "right",
 }: {
   label: string;
   button: ReactNode;
   children: (close: () => void) => ReactNode;
   panelClassName?: string;
+  /** Replaces the round icon-button style, e.g. for a labelled pill. */
+  buttonClassName?: string;
+  align?: "left" | "right";
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -51,12 +56,15 @@ export function Popover({
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
-        className="grid h-11 min-w-11 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink aria-expanded:bg-surface-2 aria-expanded:text-ink"
+        className={
+          buttonClassName ??
+          "grid h-11 min-w-11 place-items-center rounded-full text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink aria-expanded:bg-surface-2 aria-expanded:text-ink"
+        }
       >
         {button}
       </button>
       {open && (
-        <div id={id} className={`pop-in absolute right-0 top-[calc(100%+0.5rem)] z-50 rounded-2xl border border-line bg-bg-2 shadow-[0_24px_60px_-24px_rgb(0_0_0/0.75)] ${panelClassName}`}>
+        <div id={id} className={`pop-in absolute ${align === "left" ? "left-0" : "right-0"} top-[calc(100%+0.5rem)] z-50 rounded-2xl border border-line bg-bg-2 shadow-[0_24px_60px_-24px_rgb(0_0_0/0.75)] ${panelClassName}`}>
           {children(() => {
             setOpen(false);
             trigger.current?.focus();

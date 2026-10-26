@@ -182,6 +182,13 @@ export const activityDay = pgTable(
 );
 
 /** Onboarding answers and preferences. One row per user, created on first save. */
+export const READING_SCRIPTS = ["devanagari", "kannada", "telugu", "tamil", "malayalam", "iast"] as const;
+export type ReadingScript = (typeof READING_SCRIPTS)[number];
+export const MEANING_LANGS = ["en", "hi", "kn", "ta", "te", "ml"] as const;
+export type MeaningLang = (typeof MEANING_LANGS)[number];
+export const GOALS = ["learn", "recite", "calm"] as const;
+export type Goal = (typeof GOALS)[number];
+
 export const userPrefs = pgTable("user_prefs", {
   userId: text("user_id")
     .primaryKey()
@@ -193,6 +200,16 @@ export const userPrefs = pgTable("user_prefs", {
   timezone: text("timezone"),
   /** "system" follows the device; "reduce" forces fades only. */
   motion: text("motion").notNull().default("system"),
+  /** Script the verses are shown in (lib/transliterate.ts), or "iast" for Roman. */
+  script: text("script", { enum: READING_SCRIPTS }).notNull().default("devanagari"),
+  /** Language of the meaning (lib/languages.ts); English is reviewed, others are drafts. */
+  meaningLang: text("meaning_lang", { enum: MEANING_LANGS }).notNull().default("en"),
+  /** Why they're here; shapes Home. */
+  goal: text("goal", { enum: GOALS }),
+  /** Daily email hour, 0–23 in their timezone. Null = no time chosen. */
+  reminderHour: integer("reminder_hour"),
+  /** Their local day (YYYY-MM-DD) of the last reminder sent, so a day is never sent twice. */
+  lastReminderDay: text("last_reminder_day"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -321,3 +338,45 @@ export const googleCalendarLink = pgTable("google_calendar_link", {
   refreshToken: text("refresh_token").notNull(),
   connectedAt: timestamp("connected_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** A student's own grouping of slokas ("Morning chants", "For exams"). Up to 30 each. */
+export const collection = pgTable(
+  "collection",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("collection_user_idx").on(t.userId), uniqueIndex("collection_user_name_idx").on(t.userId, sql`lower(${t.name})`)],
+);
+
+/** Which slokas are in a collection. Up to 200 each. */
+export const collectionItem = pgTable(
+  "collection_item",
+  {
+    collectionId: text("collection_id")
+      .notNull()
+      .references(() => collection.id, { onDelete: "cascade" }),
+    slokaSlug: text("sloka_slug").notNull(),
+    addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.collectionId, t.slokaSlug] })],
+);
+
+/** A private note a student keeps on a sloka. Only they can read it. */
+export const slokaNote = pgTable(
+  "sloka_note",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    slokaSlug: text("sloka_slug").notNull(),
+    body: text("body").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.slokaSlug] })],
+);
+
