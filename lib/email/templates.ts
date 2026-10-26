@@ -3,7 +3,8 @@
  * mail client) and a plain-text twin. Keep copy short, warm and plain.
  */
 
-export type EmailContent = { subject: string; html: string; text: string };
+/** headers: extra mail headers, e.g. List-Unsubscribe for the daily email. */
+export type EmailContent = { subject: string; html: string; text: string; headers?: Record<string, string> };
 
 const escapeHtml = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -128,3 +129,56 @@ export function accountDeletedEmail({ name, siteUrl }: { name: string; siteUrl: 
     ].join("\n"),
   };
 }
+
+/**
+ * The daily sloka, in the student's script and language, with a one-click unsubscribe: a
+ * visible link and the List-Unsubscribe headers mail apps use for their own "Unsubscribe" button.
+ */
+export function dailySlokaEmail({
+  name,
+  title,
+  verse,
+  meaning,
+  meaningIsDraft,
+  citation,
+  slokaUrl,
+  unsubscribeUrl,
+}: {
+  name: string;
+  title: string;
+  verse: string;
+  meaning: string;
+  meaningIsDraft: boolean;
+  citation: string;
+  slokaUrl: string;
+  unsubscribeUrl: string;
+}): EmailContent {
+  const first = name.trim().split(/\s+/)[0] || "there";
+  const subject = `Today's sloka: ${title}`;
+  const lines = verse.split("\n").map((l) => escapeHtml(l)).join("<br>");
+  const draft = meaningIsDraft ? `<br><span style="font-size:12px;">Draft translation, not yet checked.</span>` : "";
+  return {
+    subject,
+    headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+    html: layout({
+      preheader: meaning.slice(0, 120),
+      heading: title,
+      body: `<span style="display:block;font-family:Georgia,serif;font-size:22px;line-height:1.7;color:${C.goldText};">${lines}</span><span style="display:block;margin-top:14px;">${escapeHtml(meaning)}${draft}</span><span style="display:block;margin-top:10px;font-size:12px;letter-spacing:1px;">${escapeHtml(citation)}</span>`,
+      cta: { label: "Read it word by word", url: slokaUrl },
+      footnote: `Namaste ${escapeHtml(first)}. You asked for a daily sloka. <a href="${escapeHtml(unsubscribeUrl)}" style="color:${C.goldText};">Stop these emails</a> any time, or change the time in Settings.`,
+    }),
+    text: [
+      subject,
+      "",
+      verse,
+      "",
+      meaning + (meaningIsDraft ? " (draft translation)" : ""),
+      citation,
+      "",
+      `Read it word by word: ${slokaUrl}`,
+      "",
+      `Stop these emails: ${unsubscribeUrl}`,
+    ].join("\n"),
+  };
+}
+

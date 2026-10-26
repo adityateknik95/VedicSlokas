@@ -53,6 +53,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: siteHeaders },
       { source: "/fonts/:path*", headers: immutable },
+      { source: "/icons/:path*", headers: immutable },
+      // The service worker must always be checked for updates, and may control the whole site.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, max-age=0" }, { key: "Service-Worker-Allowed", value: "/" }] },
       { source: "/motifs/:path*", headers: immutable },
       { source: "/login", headers: noStore },
       { source: "/signup", headers: noStore },
@@ -60,6 +63,7 @@ const nextConfig: NextConfig = {
       { source: "/dashboard/:path*", headers: noStore },
       { source: "/dashboard", headers: noStore },
       { source: "/admin/:path*", headers: noStore },
+      { source: "/unsubscribe", headers: noStore },
       { source: "/api/auth/:path*", headers: noStore },
       { source: "/api/sign-in-status", headers: noStore },
       // The confirm page carries a token in its URL: never send it anywhere as a Referer.

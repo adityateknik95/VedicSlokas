@@ -1,6 +1,7 @@
 import data from "@/data/slokas.json";
 import type { Sloka, Source, Theme } from "./types";
 import { SOURCES, THEMES } from "./types";
+import { normalize } from "./normalize";
 
 export const slokas = data as Sloka[];
 
@@ -39,26 +40,7 @@ export function getRelated(sloka: Sloka, count = 3): Sloka[] {
     .map(({ s }) => s);
 }
 
-/**
- * Folds IAST and everyday spellings onto one form, so "shiva", "śiva" and
- * "siva" all match, and "krishna" matches "kṛṣṇa".
- */
-export function normalize(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/['’‘|-]/g, " ")
-    .replace(/sh/g, "s")
-    .replace(/ch/g, "c")
-    .replace(/ri/g, "r")
-    .replace(/aa/g, "a")
-    .replace(/ee/g, "i")
-    .replace(/oo/g, "u")
-    .replace(/w/g, "v")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+export { normalize } from "./normalize";
 
 const searchIndex = new Map<string, string>(
   slokas.map((s) => [

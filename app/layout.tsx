@@ -36,6 +36,9 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName: site.name, locale: "en_IN", url: "/" },
   twitter: { card: "summary_large_image" },
   alternates: { canonical: "/" },
+  // Installed on iOS: the home-screen icon and a full-screen app.
+  appleWebApp: { capable: true, title: site.name, statusBarStyle: "black-translucent" },
+  icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {

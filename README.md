@@ -431,3 +431,53 @@ open, have them reviewed, fill in the price and refund policy, and bump `TERMS_V
    - Connect Google Meet, and scheduling a class;
    - `/api/health`.
 
+## Your own library, reading preferences, palette, offline
+
+**Collections and notes:**
+- On any sloka page, signed-in students can **Save to collection** (up to 30 collections, 200
+  slokas each, names unique per student) and keep a private **My note** (autosaved, 2,000
+  characters, shown as plain text).
+- Favourites shows each collection as a chip, with rename and delete.
+- Code: `lib/dashboard/library-data.ts`, plus `/api/me/collections`, `/api/me/collections/items`
+  and `/api/me/notes`.
+- Included in export; deleted with the account.
+
+**Reading preferences** (`user_prefs`: `script`, `meaning_lang`, `goal`, `reminder_hour`):
+- Set in onboarding (3 steps, with a live script preview) and in Settings, under Reading.
+- Today's sloka, Surprise me and sloka pages ("In your script") use `lib/reading.ts`: the verse
+  in Devanagari, Kannada, Telugu, Tamil, Malayalam or Roman, and the meaning in English or a
+  draft translation, always marked as a draft.
+- The goal sets Home's order and wording: calm puts feelings first; recite shows the
+  transliteration first.
+
+**Command palette:** `components/layout/CommandPalette.tsx`.
+- Ctrl/Cmd+K anywhere, or `/` (on the library, `/` still focuses its own search).
+- Searches `/search-index.json`, a static index built at build time, with the same spelling
+  folding as the library.
+- Also offers filters by text and theme, recent slokas, and pages and actions.
+
+**Installable app and offline:**
+- `app/manifest.ts` and `public/icons/*` make the site installable.
+- `public/sw.js`, the service worker:
+  - caches build files, fonts and icons;
+  - serves public pages network first, with saved copies when offline;
+  - keeps every **favourite** sloka saved for offline reading. `components/layout/ServiceWorker.tsx`
+    posts the favourites list to it;
+  - never caches the API, dashboard, admin or sign-in pages. Offline, those show `/offline`,
+    which lists the saved slokas.
+- **To release a change to caching,** bump `VERSION` in `sw.js`.
+
+**Daily sloka email** (built, switched off):
+- Students choose a time.
+- `.github/workflows/reminders.yml` calls `POST /api/cron/reminders` every hour with
+  `CRON_SECRET`.
+- `lib/reminders.ts` sends today's sloka, in each student's script and language, to those whose
+  hour it is in their own timezone, at most once per local day, with one-click unsubscribe
+  (`/unsubscribe` and `List-Unsubscribe` headers).
+- It refuses to send unless `REMINDERS_ENABLED=true` and `EMAIL_FROM` is on your own verified
+  domain.
+- **To switch it on, after the domain:**
+  1. Set `CRON_SECRET` (32+ characters) in Vercel and as a GitHub Actions secret.
+  2. Set the `SITE_URL` variable in GitHub.
+  3. Set `REMINDERS_ENABLED=true` and redeploy.
+

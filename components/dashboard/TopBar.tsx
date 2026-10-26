@@ -8,7 +8,7 @@ import { Diya } from "@/components/motifs";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { broadcastAuth } from "@/lib/auth-channel";
 import { activeModule } from "@/lib/dashboard/modules";
-import { SEARCH_INPUT_ID } from "@/components/layout/KeyboardShortcuts";
+import { openPalette } from "@/components/layout/CommandPalette";
 import type { ClassNotice } from "@/lib/classes";
 import { Avatar } from "./Avatar";
 import { ClassNoticesList, LiveClassPill } from "./classes/ClassNotices";
@@ -26,13 +26,7 @@ export function TopBar({ user, notices, serverNow }: { user: ShellUser; notices:
   const [signingOut, startSignOut] = useTransition();
   const title = TITLES[pathname] ?? activeModule(pathname)?.label ?? "Dashboard";
 
-  const openSearch = () => {
-    const input = document.getElementById(SEARCH_INPUT_ID) as HTMLInputElement | null;
-    if (input) {
-      input.focus();
-      input.select();
-    } else router.push("/dashboard/library?focus=search");
-  };
+  const openSearch = openPalette;
 
   const doSignOut = () =>
     startSignOut(async () => {

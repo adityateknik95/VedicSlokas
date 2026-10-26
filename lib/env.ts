@@ -46,6 +46,10 @@ const schema = z
     TURNSTILE_ENABLED: flag,
     TURNSTILE_SECRET_KEY: optional,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: optional,
+    /** Daily sloka emails. Off until the sending domain is verified (they also refuse a resend.dev sender). */
+    REMINDERS_ENABLED: flag,
+    /** Shared secret the hourly scheduler sends to /api/cron/reminders. */
+    CRON_SECRET: optional.pipe(z.string().min(32, "CRON_SECRET must be at least 32 characters").optional()),
     /** Sentry project DSN (public by design). Unset = no error reports are sent. */
     NEXT_PUBLIC_SENTRY_DSN: optional.pipe(z.url().optional()),
     /** Bump when the Terms or Privacy Policy change materially. */

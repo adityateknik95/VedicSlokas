@@ -21,7 +21,7 @@ export function SlokaPersonal({ slug }: { slug: string }) {
               In your script
             </h2>
             <Link href="/dashboard/settings#reading" className="text-xs text-ink-muted underline-offset-4 hover:text-accent hover:underline">
-              {r.scriptName} · {r.meaningName} · change
+              Script: {r.scriptName} · Meaning: {r.meaningName} · Change
             </Link>
           </div>
           {r.script !== "devanagari" && (

@@ -1,12 +1,14 @@
 "use client";
 
 import { Toaster } from "@/components/ui/Toaster";
-import { KeyboardShortcuts } from "./KeyboardShortcuts";
+import { CommandPalette } from "./CommandPalette";
+import { ServiceWorker } from "./ServiceWorker";
 
 export function ClientExtras() {
   return (
     <>
-      <KeyboardShortcuts />
+      <CommandPalette />
+      <ServiceWorker />
       <Toaster />
     </>
   );

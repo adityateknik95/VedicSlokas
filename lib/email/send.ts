@@ -32,7 +32,7 @@ export async function sendEmail(to: string, content: EmailContent): Promise<void
     subject: content.subject,
     html: content.html,
     text: content.text,
-    headers: { "X-Entity-Ref-ID": crypto.randomUUID() }, // stops Gmail threading separate sign-in emails
+    headers: { "X-Entity-Ref-ID": crypto.randomUUID(), ...content.headers }, // the ID stops Gmail threading separate emails
   });
   if (error) throw new Error(`Resend: ${error.name}: ${error.message}`);
 }
