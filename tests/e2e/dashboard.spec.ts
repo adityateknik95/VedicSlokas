@@ -175,14 +175,16 @@ test("the paid plan is only visible to testers, who can report a payment", async
   await signUpAndIn(t, "Plan Tester", "plan.tester@example.com");
   await skipOnboarding(t);
   await t.goto("/dashboard/upgrade");
-  await expect(t.getByRole("heading", { name: "Your plan", level: 1 })).toBeVisible();
-  await t.getByRole("button", { name: "Pay ₹79" }).click();
+  await expect(t.getByRole("heading", { name: "Choose how you learn", level: 1 })).toBeVisible();
+  await t.getByRole("button", { name: "Choose monthly plan · ₹79" }).click();
+  // Step 2: focus moves to the payment heading.
+  await expect(t.getByRole("heading", { name: "Pay ₹79", exact: true })).toBeFocused();
   await expect(t.getByRole("img", { name: /UPI QR code to pay ₹79/ })).toHaveAttribute("src", /^data:image\/svg\+xml/);
   await t.getByLabel("Transaction reference (UTR)").fill("12");
-  await t.getByRole("button", { name: /send reference/ }).click();
+  await t.getByRole("button", { name: "Submit payment reference" }).click();
   await expect(t.getByRole("alert").filter({ hasText: "doesn't look right" })).toBeVisible();
   await t.getByLabel("Transaction reference (UTR)").fill("4012 3456 7890");
-  await t.getByRole("button", { name: /send reference/ }).click();
+  await t.getByRole("button", { name: "Submit payment reference" }).click();
   await expect(t.getByRole("status").filter({ hasText: "Payment being checked" })).toBeVisible();
   await expect(t.getByText("401234567890")).toBeVisible();
 
