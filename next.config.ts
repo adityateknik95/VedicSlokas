@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -70,4 +71,20 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Error monitoring (Sentry). Browser reports are sent to /monitoring on this site and passed
+ * on by the server, so the CSP keeps connect-src 'self'. Source maps upload only when
+ * SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT are set; without them the build is unchanged.
+ */
+const uploadMaps = Boolean(process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT);
+
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  telemetry: false,
+  tunnelRoute: "/monitoring",
+  sourcemaps: { disable: !uploadMaps, deleteSourcemapsAfterUpload: true },
+  widenClientFileUpload: uploadMaps,
+});

@@ -46,8 +46,10 @@ const schema = z
     TURNSTILE_ENABLED: flag,
     TURNSTILE_SECRET_KEY: optional,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: optional,
+    /** Sentry project DSN (public by design). Unset = no error reports are sent. */
+    NEXT_PUBLIC_SENTRY_DSN: optional.pipe(z.url().optional()),
     /** Bump when the Terms or Privacy Policy change materially. */
-    TERMS_VERSION: z.string().trim().min(1).default("2026-10-13"),
+    TERMS_VERSION: z.string().trim().min(1).default("2026-10-26"),
     /**
      * Who sees the paid plan and can pay: "on" (every signed-in student, the default),
      * "testers" (admins and SUBSCRIPTION_TESTERS only) or "off".

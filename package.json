@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
+    "@sentry/nextjs": "11.6.0",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "better-auth": "^1.7.7",

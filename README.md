@@ -390,3 +390,44 @@ update "user" set role = 'teacher' where email = 'teacher@example.com';
 - Data: `live_class` and `class_attendance`, from migration `drizzle/0003_live_classes.sql`.
 - Tests: `tests/unit/classes*.test.ts`.
 
+## Production
+
+**Error monitoring:** Sentry, set up in `instrumentation.ts`, `instrumentation-client.ts` and
+`sentry.*.config.ts`.
+- It's off until `NEXT_PUBLIC_SENTRY_DSN` is set.
+- Browser reports go through `/monitoring` on this site, so the CSP stays `'self'`.
+- `lib/monitoring.ts` strips query strings (sign-in tokens, Google codes), cookies, request
+  bodies, auth headers and the user from every report.
+- For readable stack traces, also set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`.
+
+**Health check:** `GET /api/health` returns 200 `{ ok: true, db: true }` when the database is
+reachable, otherwise 503. Point an uptime monitor at it (for example UptimeRobot).
+
+**Payments while not ready:** set `SUBSCRIPTIONS=testers`. Only admins and `SUBSCRIPTION_TESTERS`
+see "Your plan".
+
+**Legal pages:** `app/privacy` and `app/terms` describe what the site does today. Before paid plans
+open, have them reviewed, fill in the price and refund policy, and bump `TERMS_VERSION`.
+
+### Going live on your own domain
+1. Buy the domain, add it in Vercel under Project, Settings, Domains, and set the DNS records
+   Vercel shows.
+2. **Email:** in Resend, add the domain and its DNS records (SPF, DKIM), wait for "Verified",
+   then set `EMAIL_FROM="VedicSlokas <hello@your-domain>"`. Until then, sign-in emails only reach
+   the Resend account owner.
+3. **Site address:** set `BETTER_AUTH_URL` and `NEXT_PUBLIC_SITE_URL` to `https://your-domain`.
+4. **Google:**
+   - In Google Auth Platform, Clients, add `https://your-domain/api/auth/callback/google` and
+     `https://your-domain/api/teach/google/callback`. Keep the vercel.app ones until the switch
+     is done.
+   - In Branding, set the home page, privacy and terms links on the domain, and the authorized
+     domain.
+   - In Audience, Publish app. Then anyone can use Google sign-in, and the weekly Calendar
+     disconnect stops.
+5. Update `CONTACT_EMAIL` in `components/legal/LegalPage.tsx` to an address on the domain.
+6. Redeploy, then test:
+   - an email sign-in to an address that isn't the Resend owner;
+   - Google sign-in with a non-test account;
+   - Connect Google Meet, and scheduling a class;
+   - `/api/health`.
+

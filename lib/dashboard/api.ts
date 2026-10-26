@@ -1,4 +1,5 @@
 import "server-only";
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import type { z } from "zod";
 import { siteOrigin } from "@/lib/env";
@@ -92,6 +93,7 @@ export function meRoute(handler: Handler, options: { limit?: RuleName } = {}) {
     } catch (error) {
       if (error instanceof Invalid) return fail("invalid", 400, { issues: error.issues });
       console.error("[api/me] request failed", request.method, new URL(request.url).pathname, error instanceof Error ? error.message : error);
+      Sentry.captureException(error, { tags: { route: new URL(request.url).pathname, method: request.method } });
       return fail("server_error", 500);
     }
   };

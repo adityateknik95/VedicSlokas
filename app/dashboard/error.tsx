@@ -1,9 +1,15 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
+import { useEffect } from "react";
 
-/** A whole dashboard page failed. Calm, honest, and two ways forward. */
-export default function DashboardError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+/** A whole dashboard page failed. Calm, honest, and two ways forward. The error is reported. */
+export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div className="dash-page">
       <div role="alert" className="dash-card mx-auto max-w-lg px-6 py-12 text-center">
