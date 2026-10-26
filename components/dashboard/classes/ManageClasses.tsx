@@ -241,6 +241,15 @@ export function ManageClasses({ classes, isAdmin, google, notice }: { classes: M
     }
   };
 
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Meeting link copied.");
+    } catch {
+      toast("Couldn't copy. Select the link and copy it by hand.", { tone: "error" });
+    }
+  };
+
   const edit = (c: ManagedClass) =>
     setEditing({
       id: c.id,
@@ -280,10 +289,28 @@ export function ManageClasses({ classes, isAdmin, google, notice }: { classes: M
                     {!c.cancelled && over && " · Finished"}
                   </p>
                   <p className="mt-1 font-semibold text-ink">{c.title}</p>
-                  <p className="mt-0.5 truncate text-xs text-ink-muted">{c.meetingUrl}</p>
+                  <a href={c.meetingUrl} target="_blank" rel="noopener noreferrer" className="mt-0.5 block truncate text-xs text-ink-muted underline-offset-4 hover:text-accent hover:underline">
+                    {c.meetingUrl}
+                  </a>
                 </div>
                 <p className="shrink-0 text-sm text-ink-muted">{c.joined === 1 ? "1 joined" : `${c.joined} joined`}</p>
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {!c.cancelled && !over && (
+                    <>
+                      {/* The host can open their meeting any time, e.g. early to set up; students get Join from ten minutes before. */}
+                      <a
+                        href={c.meetingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-saffron px-4 text-sm font-semibold text-on-saffron transition-transform hover:-translate-y-0.5"
+                      >
+                        Open meeting <span aria-hidden="true">↗</span>
+                      </a>
+                      <button type="button" onClick={() => void copyLink(c.meetingUrl)} className="min-h-11 rounded-full border border-line px-4 text-sm font-semibold text-ink hover:border-gold">
+                        Copy link
+                      </button>
+                    </>
+                  )}
                   <button type="button" onClick={() => edit(c)} className="min-h-11 rounded-full border border-line px-4 text-sm font-semibold text-ink hover:border-gold">
                     Edit
                   </button>
