@@ -7,6 +7,7 @@ import { Diya } from "@/components/motifs";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { AccountLink } from "@/components/auth/AccountLink";
 import { AuthSync } from "@/components/auth/AuthSync";
+import { smoothScroller } from "@/components/motion/smooth-scroller";
 
 /**
  * The public header says what VedicSlokas is, not what buttons it has: each link opens a part
@@ -22,19 +23,56 @@ const NAV: { href: string; label: string }[] = [
 ];
 
 /**
- * Scrolls to the landing section a link points at. The browser's own jump is lost on a
- * fresh load of "/#section" (the page settles after it), and a click on a link to the
- * hash already in the address bar changes nothing, so the header does it itself.
+ * Brings a landing section into view and keeps it there while the page settles. Sections
+ * above it render lazily (content-visibility) and the descent grows when its 3D stage starts,
+ * so a single jump drifts as they take their real height, most of all when arriving from
+ * another page. For up to 3 s the section is put back whenever it moves; it stops as soon as
+ * it holds still, or the moment the reader scrolls, touches or presses a key themselves.
  */
-function scrollToSection(href: string) {
+let stopSettling: (() => void) | null = null;
+
+function settleOnSection(href: string) {
+  stopSettling?.();
   const at = href.indexOf("#");
-  const id = at === -1 ? "" : href.slice(at + 1);
-  if (id) document.getElementById(decodeURIComponent(id))?.scrollIntoView({ block: "start" });
+  const id = at === -1 ? "" : decodeURIComponent(href.slice(at + 1));
+  if (!id) return;
+  const offset = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  const started = performance.now();
+  let stableSince = started;
+  let lastY = -1;
+  let stillFrames = 0;
+  let frame = 0;
+  const stop = () => {
+    cancelAnimationFrame(frame);
+    for (const e of ["wheel", "touchstart", "keydown", "pointerdown"] as const) window.removeEventListener(e, stop);
+    if (stopSettling === stop) stopSettling = null;
+  };
+  const step = (now: number) => {
+    const el = document.getElementById(id);
+    // Only step in once the page has stopped scrolling, so a smooth scroll (Lenis) finishes first.
+    stillFrames = window.scrollY === lastY ? stillFrames + 1 : 0;
+    lastY = window.scrollY;
+    if (stillFrames < 3) stableSince = now;
+    else if (el) {
+      const top = el.getBoundingClientRect().top;
+      if (Math.abs(top - offset) > 2) {
+        const lenis = smoothScroller();
+        if (lenis) lenis.scrollTo(el, { immediate: true, force: true }); // Lenis adds the scroll padding itself
+        else el.scrollIntoView({ block: "start" });
+        stableSince = now;
+      }
+    }
+    if (now - started > 3000 || (el && now - stableSince > 600)) return stop();
+    frame = requestAnimationFrame(step);
+  };
+  for (const e of ["wheel", "touchstart", "keydown", "pointerdown"] as const) window.addEventListener(e, stop, { passive: true, once: true });
+  stopSettling = stop;
+  frame = requestAnimationFrame(step);
 }
 
-/** On the landing page, section links scroll in place; elsewhere they navigate as usual. */
+/** On the landing page, section links scroll in place (and stay put); elsewhere they navigate as usual. */
 const onSectionClick = (pathname: string, href: string) => () => {
-  if (pathname === "/" && href.startsWith("/#")) scrollToSection(href);
+  if (pathname === "/" && href.startsWith("/#")) requestAnimationFrame(() => settleOnSection(href));
 };
 
 /** The shared frosted-gold pill used by both the nav and the action group. */
@@ -155,22 +193,21 @@ export function Header() {
   const menu = useCompactMenu();
   const [scrolled, setScrolled] = useState(false);
 
+  // Arriving at "/#section", by a fresh load or from another page: settle on that section.
   useEffect(() => {
+    if (pathname !== "/" || !window.location.hash) return;
     const hash = window.location.hash;
-    if (!hash) return;
-    let timer = 0;
-    // After load: until then the hydrating router and late layout (fonts, the descent stage)
-    // undo or shift an earlier jump.
-    const go = () => {
-      timer = window.setTimeout(() => scrollToSection(hash), 60);
-    };
+    const go = () => settleOnSection(hash);
     if (document.readyState === "complete") go();
     else window.addEventListener("load", go, { once: true });
+    const onHash = () => settleOnSection(window.location.hash);
+    window.addEventListener("hashchange", onHash);
     return () => {
       window.removeEventListener("load", go);
-      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", onHash);
+      stopSettling?.();
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);

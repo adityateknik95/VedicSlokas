@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import type Lenis from "lenis";
+import { setSmoothScroller } from "./smooth-scroller";
 import { onFirstInteraction } from "@/lib/idle";
 
 const ReducedMotionContext = createContext(false);
@@ -99,6 +100,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
       gsap.ticker.add(tick);
       gsap.ticker.lagSmoothing(0);
       lenisRef.current = lenis;
+      setSmoothScroller(lenis);
       gsapRef.current = { gsap, ScrollTrigger };
       setReady(true);
     });
@@ -109,6 +111,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
       if (tick && gsapRef.current) gsapRef.current.gsap.ticker.remove(tick);
       lenisRef.current?.destroy();
       lenisRef.current = null;
+      setSmoothScroller(null);
       setReady(false);
     };
   }, [reduced, inApp]);
