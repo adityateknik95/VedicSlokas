@@ -16,7 +16,8 @@ const primary =
 /**
  * Account actions in the header. Guests see "Log in" and "Create account"; members see
  * "Dashboard". Reads a non-secret hint cookie after hydration (public pages stay static);
- * /dashboard does the real session check. Fixed width, so the swap never shifts layout.
+ * /dashboard does the real session check. Sized to what it shows; the pill sits at the right
+ * edge, so only its own left edge moves when the hint arrives.
  */
 export function AccountLink() {
   const signedIn = useSignedInHint();
@@ -34,8 +35,8 @@ export function AccountLink() {
         <PersonIcon />
       </Link>
 
-      {/* Laptops and up: full labels in a fixed-width slot. */}
-      <div className={`hidden w-[15.5rem] items-center justify-end gap-1 lg:flex ${hidden}`}>
+      {/* Laptops and up: full labels. */}
+      <div className={`hidden items-center gap-1 lg:flex ${hidden}`}>
         {signedIn ? (
           <Link href="/dashboard" className={primary}>
             <PersonIcon />
