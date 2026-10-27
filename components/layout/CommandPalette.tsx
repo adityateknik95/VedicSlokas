@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import type { SearchEntry } from "@/app/search-index.json/route";
 import { trapTab } from "@/components/dashboard/focus-trap";
 import { openSurprise } from "@/components/dashboard/surprise-events";
+import { smoothScroller } from "@/components/motion/smooth-scroller";
 import { THEME_KEY } from "@/components/ui/ThemeToggle";
 import { SEARCH_INPUT_ID } from "./KeyboardShortcuts";
 import { hasSessionHint } from "@/lib/dashboard/client";
@@ -84,8 +85,11 @@ export function CommandPalette() {
     if (open && !d.open) {
       d.showModal();
       input.current?.focus();
+      // The landing page's smooth scroll would take the wheel; the list scrolls on its own while open.
+      smoothScroller()?.stop();
     }
     const onClose = () => {
+      smoothScroller()?.start();
       setOpen(false);
       returnTo.current?.focus?.();
     };
@@ -223,6 +227,7 @@ export function CommandPalette() {
       ref={dialog}
       aria-label="Search and go"
       onKeyDown={trapTab}
+      data-lenis-prevent
       onClick={(e) => {
         if (e.target === dialog.current) close();
       }}
@@ -230,7 +235,7 @@ export function CommandPalette() {
     >
       {open && (
         <div>
-          <div className="flex items-center gap-3 border-b border-line px-4">
+          <div className="flex items-center gap-3 border-b border-line px-5">
             <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-ink-muted" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
               <circle cx="11" cy="11" r="6.5" />
               <path d="M20 20l-4.2-4.2" strokeLinecap="round" />
@@ -249,18 +254,18 @@ export function CommandPalette() {
               placeholder="Search slokas, any spelling, or jump to a page…"
               autoComplete="off"
               spellCheck={false}
-              className="h-14 min-w-0 flex-1 bg-transparent text-base text-ink outline-none placeholder:text-ink-muted"
+              className="palette-input h-14 min-w-0 flex-1 bg-transparent text-base text-ink placeholder:text-ink-muted"
             />
             <kbd className="hidden rounded border border-line px-1.5 text-[0.7rem] text-ink-muted sm:block">Esc</kbd>
           </div>
 
-          <div role="group" aria-label="Filter slokas" className="flex flex-wrap gap-1.5 border-b border-line px-4 py-2.5">
+          <div role="group" aria-label="Filter slokas" className="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
             {SOURCES.map((s) => (
               <button key={s} type="button" aria-pressed={source === s} onClick={() => setSource(source === s ? "" : s)} className={chip(source === s)}>
                 {s}
               </button>
             ))}
-            <span aria-hidden="true" className="mx-1 w-px self-stretch bg-line" />
+            <span aria-hidden="true" className="mx-1 h-6 w-px bg-line" />
             {THEMES.map((t) => (
               <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(theme === t ? "" : t)} className={chip(theme === t)}>
                 {THEME_LABEL[t]}
@@ -268,10 +273,10 @@ export function CommandPalette() {
             ))}
           </div>
 
-          <p id={`${ids}-heading`} className="px-5 pt-3 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink-muted">
+          <p id={`${ids}-heading`} className="px-5 pb-1 pt-4 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink-muted">
             {heading}
           </p>
-          <ul id={`${ids}-list`} role="listbox" aria-labelledby={`${ids}-heading`} className="max-h-[50vh] overflow-y-auto p-2">
+          <ul id={`${ids}-list`} role="listbox" aria-labelledby={`${ids}-heading`} className="max-h-[min(50vh,26rem)] overflow-y-auto overscroll-contain p-2 pt-1 [scrollbar-width:thin]">
             {items.map((item, i) => (
               <li
                 key={item.id}

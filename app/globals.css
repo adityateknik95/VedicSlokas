@@ -119,6 +119,12 @@ body {
   border-radius: 6px;
 }
 
+/* The palette's search box is always focused while it is open (the caret shows it); a ring
+   around it only crowds the text. */
+.palette-input:focus-visible {
+  outline: none;
+}
+
 /* Lenis */
 html.lenis,
 html.lenis body {
