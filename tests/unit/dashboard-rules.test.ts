@@ -51,7 +51,7 @@ describe("module registry", () => {
 
   it("puts the coming-soon modules on the home rail, each with an interest signal", () => {
     const rail = modulesFor("homeRail");
-    expect(rail.map((m) => m.key)).toEqual(["notes", "courses"]);
+    expect(rail.map((m) => m.key)).toEqual(["courses"]);
     for (const m of rail) {
       expect(m.status).toBe("soon");
       expect(m.feature).toBeTruthy();

@@ -73,7 +73,7 @@ export function Footer() {
 
       <div className="relative border-t border-line">
         <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-3 px-5 py-6 text-xs text-ink-muted sm:flex-row sm:items-center sm:px-8">
-          <p>© {new Date().getFullYear()} VedicSlokas. Verses are in the public domain; translations are our own.</p>
+          <p>© {new Date().getFullYear()} VedicSlokas. Powered by Vamscore</p>
           <a href="#main" className="inline-flex min-h-11 items-center gap-1.5 hover:text-accent">
             Back to top <span aria-hidden="true">↑</span>
           </a>

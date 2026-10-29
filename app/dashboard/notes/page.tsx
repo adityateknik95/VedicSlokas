@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import { ModulePage } from "@/components/dashboard/ModulePage";
+import { SlokaPdfNotes } from "@/components/dashboard/notes/SlokaPdfNotes";
+import { dashboardUser, prefsFor } from "@/lib/dashboard/state";
 
 export const metadata: Metadata = { title: "Notes" };
 
-/** TODO(notes): build study notes for each sloka here, pass them to ModulePage as children, then flip "notes" to "live" in lib/dashboard/modules.ts. */
-export default function Page() {
-  return <ModulePage moduleKey="notes" />;
+export default async function Page() {
+  const user = await dashboardUser("/dashboard/notes");
+  const prefs = await prefsFor(user.id);
+  return (
+    <ModulePage moduleKey="notes">
+      <SlokaPdfNotes defaultLanguage={prefs.meaningLang} />
+    </ModulePage>
+  );
 }

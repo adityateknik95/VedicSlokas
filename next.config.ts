@@ -10,20 +10,24 @@ const isDev = process.env.NODE_ENV !== "production";
  * bootstrap and our theme boot script on static pages (nonces would force every page to be
  * rendered per request); see README → Authentication.
  */
-const csp = [
+const cspParts = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://lh3.googleusercontent.com",
   "font-src 'self'",
   `connect-src 'self' https://challenges.cloudflare.com${isDev ? " ws: wss:" : ""}`,
-  "frame-src https://challenges.cloudflare.com",
+  // 'self': the Notes page previews its PDFs in a frame.
+  "frame-src 'self' https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "form-action 'self' https://accounts.google.com",
   "base-uri 'self'",
   "object-src 'none'",
   ...(isDev ? [] : ["upgrade-insecure-requests"]),
-].join("; ");
+];
+const csp = cspParts.join("; ");
+/** The study-notes PDFs may be framed by our own pages (the Notes preview), and nowhere else. */
+const notesCsp = cspParts.map((d) => (d.startsWith("frame-ancestors") ? "frame-ancestors 'self'" : d)).join("; ");
 
 /** Sent with every response. HSTS comes from Vercel (max-age two years, preload). */
 const siteHeaders = [
@@ -57,6 +61,7 @@ const nextConfig: NextConfig = {
       // The service worker must always be checked for updates, and may control the whole site.
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, max-age=0" }, { key: "Service-Worker-Allowed", value: "/" }] },
       { source: "/motifs/:path*", headers: immutable },
+      { source: "/notes/:path*", headers: [{ key: "Content-Security-Policy", value: notesCsp }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
       { source: "/login", headers: noStore },
       { source: "/signup", headers: noStore },
       { source: "/check-email", headers: noStore },

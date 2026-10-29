@@ -88,12 +88,12 @@ test("opening a sloka and marking it learned shows up in progress", async ({ pag
 test("Notify me is remembered", async ({ page }) => {
   await signUpAndIn(page, "Nila");
   await skipOnboarding(page);
-  await page.goto("/dashboard/notes");
+  await page.goto("/dashboard/courses");
   await page.getByRole("button", { name: /Notify me/ }).click();
   await expect(page.getByRole("button", { name: /notified/ })).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   await expect(page.getByRole("button", { name: /notified/ })).toHaveAttribute("aria-pressed", "true");
-  expect((await api<{ features: string[] }>(page, "/api/me/interest")).body.features).toEqual(["notes"]);
+  expect((await api<{ features: string[] }>(page, "/api/me/interest")).body.features).toEqual(["courses"]);
 });
 
 test("one student can never read or change another student's data", async ({ browser }) => {
