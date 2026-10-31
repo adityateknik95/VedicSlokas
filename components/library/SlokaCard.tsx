@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Sloka } from "@/lib/types";
 import { Tilt } from "@/components/ui/Tilt";
 import { FavoriteButton } from "@/components/ui/FavoriteButton";
-import { cardLineSize } from "@/lib/akshara";
+import { CardVerseLine } from "./CardVerseLine";
 
 export type CardBadge = "new" | "learned";
 
@@ -25,9 +25,7 @@ export function SlokaCard({ sloka, index = 0, headingLevel = "h3", badge }: { sl
           </p>
           <FavoriteButton slug={sloka.slug} title={sloka.title} size="sm" className="relative z-10 -mr-2 -mt-2" />
         </div>
-        <p className={`deva lamp-deva mt-3 [overflow-wrap:anywhere] ${cardLineSize(firstLine, "text-2xl sm:text-[1.7rem]", "text-[1.4rem] sm:text-2xl", "text-[1.3rem] sm:text-[1.4rem]")}`} lang="sa">
-          {firstLine}
-        </p>
+        <CardVerseLine line={firstLine} />
         <H className="display mt-3 text-2xl text-[var(--lamp-ink)]">
           <Link href={`/sloka/${sloka.slug}`} className="after:absolute after:inset-0 after:rounded-[1.25rem] after:content-[''] focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-4 focus-visible:after:outline-flame focus-visible:after:outline-solid">
             {sloka.title}

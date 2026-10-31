@@ -20,12 +20,10 @@ export const HERO = {
   titleTail: "to",
   titleEmphasis: "you.",
   lede: "The oldest words humanity has, still asking who you are. Read one. Sit with it. Carry it into your day.",
-  /** Bṛhadāraṇyaka Upaniṣad 1.3.28, the first two lines of the Pavamāna mantra in data/slokas.json. */
-  verseDevanagari: "असतो मा सद्गमय । तमसो मा ज्योतिर्गमय ॥",
-  verseIast: "asato mā sad gamaya · tamaso mā jyotir gamaya",
-  primary: "Begin your journey",
+  todayLabel: "Today's sloka",
+  primary: "Read today's sloka",
   primarySignedIn: "Go to your dashboard",
-  secondary: "Explore slokas",
+  secondary: "Browse the library",
   scrollCue: "Scroll to fall inward",
   pauseMotion: "Pause motion",
   playMotion: "Play motion",
@@ -144,8 +142,8 @@ export const STREAMS_COPY = {
 export const YOUR_SPACE_COPY = {
   eyebrow: "Your space",
   title: "A quiet corner that is yours",
-  lede: "A free account keeps your favorites on every device, remembers your progress and greets you with a new sloka each day.",
-  points: ["Favorites saved across your devices", "Your reading progress, kept", "A fresh sloka every morning"],
+  lede: "A free account keeps your favourites on every device, remembers your progress and greets you with a new sloka each day.",
+  points: ["Favourites saved across your devices", "Your reading progress, kept", "A fresh sloka every morning"],
   previewLabel: "Preview with sample data",
   previewCaption: "A preview of your space, shown with sample data",
   previewToday: "Today's sloka",
@@ -163,9 +161,9 @@ export const YOUR_SPACE_COPY = {
 
 export const FINAL_COPY = {
   title: "Return to yourself.",
-  lede: "It takes a minute, and there is no password to remember.",
-  primary: "Create your free account",
+  lede: "One verse a day is enough, and you need no account to read it.",
+  primary: "Read today's sloka",
   primarySignedIn: "Go to your dashboard",
-  secondary: "I already have an account",
+  secondary: "Create a free account",
   secondarySignedIn: "Explore the library",
 };

@@ -28,6 +28,25 @@ export function getSlokaOfTheDay(date = new Date()): Sloka {
   return slokas[day % slokas.length];
 }
 
+/** Numeric reading position within a text: "1.164" comes after "1.89". */
+const position = (s: Sloka) => [...(s.reference.chapter ?? "").split(".").filter(Boolean).map(Number), Number(s.reference.verse)];
+
+function comparePosition(a: Sloka, b: Sloka): number {
+  const [x, y] = [position(a), position(b)];
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    const d = (x[i] ?? 0) - (y[i] ?? 0);
+    if (d) return d;
+  }
+  return 0;
+}
+
+/** The verses we have just before and after this one in the same text. Never wraps around. */
+export function getTextNeighbours(sloka: Sloka): { prev?: Sloka; next?: Sloka } {
+  const inText = slokas.filter((s) => s.reference.text === sloka.reference.text).sort(comparePosition);
+  const i = inText.findIndex((s) => s.slug === sloka.slug);
+  return { prev: inText[i - 1], next: inText[i + 1] };
+}
+
 export function getRelated(sloka: Sloka, count = 3): Sloka[] {
   return slokas
     .filter((s) => s.slug !== sloka.slug)

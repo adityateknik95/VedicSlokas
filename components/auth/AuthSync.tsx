@@ -15,6 +15,12 @@ export function AuthSync() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Signing in ends in an in-app navigation, with no reload: everything that reads the hint
+  // cookie (the header, guest favourites waiting to merge) looks again on every page change.
+  useEffect(() => {
+    window.dispatchEvent(new Event("vs-auth-change"));
+  }, [pathname]);
+
   useEffect(() => {
     const isProtected = PROTECTED.some((p) => pathname === p || pathname.startsWith(`${p}/`));
     let channel: BroadcastChannel | null = null;

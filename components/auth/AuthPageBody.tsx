@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { MAGIC_LINK_MINUTES } from "@/lib/auth";
 import { env, isGoogleEnabled } from "@/lib/env";
 import { EmailForm } from "./EmailForm";
 import { Divider, FormMessage } from "./FormMessage";
 import { GoogleButton } from "./GoogleButton";
+import { SavedFavouritesNote } from "./SavedFavouritesNote";
 
 type Props = {
   mode: "login" | "signup";
@@ -21,24 +23,27 @@ export function AuthPageBody({ mode, callbackUrl, notice, error }: Props) {
       {notice && <FormMessage tone="success">{notice}</FormMessage>}
       {error && <FormMessage tone="error">{error}</FormMessage>}
 
-      <div>
-        <GoogleButton enabled={isGoogleEnabled()} callbackUrl={callbackUrl} mode={mode} />
-        <p className="mt-3 text-center text-xs leading-relaxed text-ink-muted">
-          By continuing with Google, you agree to our{" "}
-          <Link href="/terms" className="underline underline-offset-2 hover:text-accent">
-            Terms
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="underline underline-offset-2 hover:text-accent">
-            Privacy Policy
-          </Link>
-          .
-        </p>
-      </div>
+      {mode === "signup" && <SavedFavouritesNote />}
+
+      <GoogleButton enabled={isGoogleEnabled()} callbackUrl={callbackUrl} mode={mode} />
 
       <Divider />
 
       <EmailForm mode={mode} callbackUrl={callbackUrl} turnstileSiteKey={turnstileSiteKey} />
+
+      <p className="text-center text-sm text-ink-muted">We&apos;ll email you a link. Check your inbox; it&apos;s valid for {MAGIC_LINK_MINUTES} minutes.</p>
+
+      <p className="text-center text-xs leading-relaxed text-ink-muted">
+        By continuing, you agree to our{" "}
+        <Link href="/terms" className="underline underline-offset-2 hover:text-accent">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-accent">
+          Privacy Policy
+        </Link>
+        .
+      </p>
 
       <p className="pt-2 text-center text-sm text-ink-muted">
         {mode === "login" ? "New to VedicSlokas? " : "Already have an account? "}

@@ -24,9 +24,7 @@ const linkIn = (text: string) => {
 
 async function signUp(page: Page, name: string, email: string) {
   await page.goto("/signup");
-  await page.getByLabel("Your name").fill(name);
   await page.getByLabel("Email address").fill(email);
-  await page.getByRole("checkbox", { name: /I agree/ }).check();
   await page.getByRole("button", { name: "Email me a sign in link" }).click();
   await expect(page).toHaveURL(/\/check-email/);
 }
@@ -34,13 +32,14 @@ async function signUp(page: Page, name: string, email: string) {
 test("sign up form validates inline and focuses the first problem", async ({ page }) => {
   await page.goto("/signup");
   await page.getByRole("button", { name: "Email me a sign in link" }).click();
-  await expect(page.locator("#name-error")).toHaveText("Please tell us your name.");
   await expect(page.locator("#email-error")).toHaveText("Please enter your email address.");
-  await expect(page.locator("#consent-error")).toHaveText("Please agree to the Terms and Privacy Policy to continue.");
   // Screen readers get one summary via the live region.
-  await expect(page.locator('form [aria-live="assertive"]')).toContainText("3 things to fix");
-  await expect(page.getByLabel("Your name")).toBeFocused();
-  await expect(page.getByLabel("Your name")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator('form [aria-live="assertive"]')).toContainText("One thing to fix");
+  await expect(page.getByLabel("Email address")).toBeFocused();
+  await expect(page.getByLabel("Email address")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(/valid for 15 minutes/)).toBeVisible();
+  await expect(page.getByLabel("Your name")).toHaveCount(0);
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
 
   await page.getByLabel("Email address").fill("asha@gmial.com");
   await expect(page.getByText("Did you mean")).toBeVisible();
@@ -48,7 +47,6 @@ test("sign up form validates inline and focuses the first problem", async ({ pag
   await expect(page.getByLabel("Email address")).toHaveValue("asha@gmail.com");
 
   await page.getByLabel("Email address").fill("not-an-email");
-  await page.getByLabel("Your name").fill("Asha");
   await page.getByRole("button", { name: "Email me a sign in link" }).click();
   await expect(page.locator("#email-error")).toContainText("doesn't look like a complete email address");
   await expect(page.getByLabel("Email address")).toBeFocused();
@@ -95,7 +93,7 @@ test("confirm page: viewing the link doesn't use it; the button does, once", asy
   await page.getByRole("button", { name: "Confirm sign in" }).click();
   // A brand-new student lands in the dashboard's first-run welcome.
   await expect(page).toHaveURL(/\/dashboard\/welcome$/);
-  await expect(page.getByRole("heading", { name: /Namaste, Confirm/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Namaste, friend/ })).toBeVisible();
   await page.getByRole("button", { name: /Account menu/ }).click();
   await expect(page.getByText(email)).toBeVisible();
 

@@ -57,16 +57,10 @@ export async function requestLoginLink(_prev: RequestLinkState, form: FormData):
 }
 
 export async function requestSignupLink(_prev: RequestLinkState, form: FormData): Promise<RequestLinkState> {
-  const parsed = signupSchema.safeParse({ name: form.get("name"), email: form.get("email"), consent: form.get("consent") ?? undefined });
-  if (!parsed.success) {
-    return {
-      status: "invalid",
-      fieldErrors: fieldErrorsOf(parsed.error),
-      values: { name: String(form.get("name") ?? ""), email: String(form.get("email") ?? "") },
-    };
-  }
+  const parsed = signupSchema.safeParse({ email: form.get("email") });
+  if (!parsed.success) return { status: "invalid", fieldErrors: fieldErrorsOf(parsed.error), values: { email: String(form.get("email") ?? "") } };
   const callbackUrl = safeCallbackUrl(form.get("callbackUrl"));
-  const state = await send("signup", parsed.data.email, parsed.data.name, callbackUrl, form.get("cf-turnstile-response") as string | null);
+  const state = await send("signup", parsed.data.email, undefined, callbackUrl, form.get("cf-turnstile-response") as string | null);
   if (state.status === "sent") redirect(checkEmailUrl(callbackUrl));
   return state;
 }

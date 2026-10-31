@@ -38,20 +38,11 @@ export default function LibraryPage() {
         />
       </Container>
 
-      {/* The wheel of verses (moved here from the old home page). Its code loads near the viewport. */}
-      <section aria-labelledby="wheel-title" className="relative">
-        <h2 id="wheel-title" className="sr-only">
-          Featured slokas: turn the wheel
-        </h2>
-        <p className="mx-auto max-w-xl px-5 text-center text-sm text-ink-muted">Our most loved slokas. Drag to turn the wheel, then open the one in front.</p>
-        <CarouselLazy items={wheel} />
-      </section>
-
       <Container>
         <Suspense
           fallback={
             // Full list in the static HTML (first paint, crawlers); the interactive browser takes over on load.
-            <ul className="mt-40 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            <ul className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
               {slokas.map((s, i) => (
                 <li key={s.slug}>
                   <SlokaCard sloka={s} index={i} />
@@ -63,6 +54,15 @@ export default function LibraryPage() {
           <LibraryBrowser />
         </Suspense>
       </Container>
+
+      {/* Decoration, after the real list: a slower way to meet a verse. Its code loads near the viewport. */}
+      <section aria-labelledby="wheel-title" className="relative mt-24">
+        <h2 id="wheel-title" className="display text-center text-3xl text-ink sm:text-4xl">
+          Or turn the wheel
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl px-5 text-center text-sm text-ink-muted">Drag to turn it, then open the verse in front.</p>
+        <CarouselLazy items={wheel} />
+      </section>
     </div>
   );
 }

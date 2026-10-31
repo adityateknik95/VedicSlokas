@@ -78,7 +78,7 @@ test("installable, and favourite slokas open with no connection", async ({ page,
   // A guest favourites a sloka; the service worker saves it for offline reading.
   await page.goto("/sloka/gayatri-mantra");
   await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.getByRole("button", { name: /^Save .* to favorites$/ }).first().click();
+  await page.getByRole("button", { name: /^Save .* to favourites$/ }).first().click();
   await expect
     .poll(async () => page.evaluate(async () => Boolean(await (await caches.open("vs-saved-v1")).match("/sloka/gayatri-mantra"))), { timeout: 20_000 })
     .toBe(true);

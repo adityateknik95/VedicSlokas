@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Diya, Mandala } from "@/components/motifs";
 import { SOURCES, THEMES, themeInfo, slokas } from "@/lib/slokas";
+import { FavouritesLink } from "./FavouritesLink";
 
 const linkCls = "inline-flex min-h-11 items-center text-ink-muted transition-colors hover:text-accent";
 
@@ -32,9 +33,10 @@ export function Footer() {
             <li><Link className={linkCls} href="/">Home</Link></li>
             <li><Link className={linkCls} href="/library">Library</Link></li>
             <li><Link className={linkCls} href="/#how-it-works">How it works</Link></li>
-            <li><Link className={linkCls} href="/dashboard/favourites">Your favourites</Link></li>
+            <li><FavouritesLink className={linkCls}>Your favourites</FavouritesLink></li>
             <li><Link className={linkCls} href="/translate">Translate</Link></li>
             <li><Link className={linkCls} href="/about">About</Link></li>
+            <li><Link className={linkCls} href="/pilgrimage">Pilgrimage</Link></li>
           </ul>
         </nav>
 

@@ -1,5 +1,6 @@
 import { Mandala } from "@/components/motifs";
 import { FINAL_COPY } from "@/lib/landing-copy";
+import { getSlokaOfTheDay } from "@/lib/slokas";
 import { AuthAwareCta } from "./AuthAwareCta";
 
 /** Scene eight: a calm return. The journey ends where it began, in the night sky. */
@@ -22,10 +23,10 @@ export function FinalCta() {
           {FINAL_COPY.lede}
         </p>
         <div data-reveal style={{ ["--i" as string]: 2 }} className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <AuthAwareCta guest={{ href: "/signup", label: FINAL_COPY.primary }} member={{ href: "/dashboard", label: FINAL_COPY.primarySignedIn }} className="w-full sm:w-[17rem]" />
+          <AuthAwareCta guest={{ href: `/sloka/${getSlokaOfTheDay().slug}`, label: FINAL_COPY.primary }} member={{ href: "/dashboard", label: FINAL_COPY.primarySignedIn }} className="w-full sm:w-[17rem]" />
           <AuthAwareCta
             tone="quiet"
-            guest={{ href: "/login", label: FINAL_COPY.secondary }}
+            guest={{ href: "/signup", label: FINAL_COPY.secondary }}
             member={{ href: "/library", label: FINAL_COPY.secondarySignedIn }}
             className="w-full sm:w-[17rem]"
           />

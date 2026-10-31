@@ -2,8 +2,10 @@ import Link from "next/link";
 import { Mandala } from "@/components/motifs";
 import { Eyebrow } from "@/components/ui";
 import { HERO } from "@/lib/landing-copy";
+import { getSlokaOfTheDay } from "@/lib/slokas";
 import { AuthAwareCta } from "./AuthAwareCta";
 import { HeroSky, MotionToggle } from "./HeroClient";
+import { TodaySloka } from "./TodaySloka";
 
 /**
  * Scene one, "Space". The headline, line and buttons are plain server HTML so they paint
@@ -12,6 +14,7 @@ import { HeroSky, MotionToggle } from "./HeroClient";
  */
 export function Hero() {
   const words = HERO.titleLead.split(" ");
+  const today = getSlokaOfTheDay();
   return (
     <section aria-labelledby="hero-title" className="hero-framed hero-space cosmos cosmos-framed grain relative flex items-center overflow-hidden">
       <HeroSky />
@@ -61,21 +64,14 @@ export function Hero() {
           {HERO.lede}
         </p>
 
-        {/* A real verse, kept quiet. Read once: the transliteration is visual only. */}
-        <div className="mt-5 opacity-45 sm:mt-6">
-          <span className="word-settle" style={{ ["--i" as string]: 4 }}>
-            <span lang="sa" className="deva block text-lg leading-snug text-ink sm:text-xl">
-              {HERO.verseDevanagari}
-            </span>
-            <span aria-hidden="true" className="iast mt-1 block text-xs tracking-wide text-ink-muted sm:text-sm">
-              {HERO.verseIast}
-            </span>
-          </span>
+        {/* A real verse: today's, not a decoration. */}
+        <div className="rise-in mt-4 sm:mt-5" style={{ ["--i" as string]: 4 }}>
+          <TodaySloka slug={today.slug} title={today.title} citation={today.reference.citation} line={today.devanagari.split("\n")[0].replace(/[।॥]/g, "").trim()} />
         </div>
 
         <div className="rise-in mt-8 flex sm:mt-10 flex-col items-center justify-center gap-3 sm:flex-row" style={{ ["--i" as string]: 5 }}>
           <AuthAwareCta
-            guest={{ href: "/signup", label: HERO.primary }}
+            guest={{ href: `/sloka/${today.slug}`, label: HERO.primary }}
             member={{ href: "/dashboard", label: HERO.primarySignedIn }}
             className="w-full sm:w-[17rem]"
           />

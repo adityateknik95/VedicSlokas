@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SOURCES, getSloka, slokas } from "@/lib/slokas";
 import { LANGUAGES, getLanguage, meaningIn, slokaInScript, type Language } from "@/lib/languages";
+import { useReadingLanguage } from "@/lib/reading-language";
 
 const DEFAULT_SLUG = "gayatri-mantra";
 const DEFAULT_LANG = "kn";
@@ -12,7 +13,8 @@ const DEFAULT_LANG = "kn";
 /** Reads ?sloka= and ?lang= so any translation can be shared as a link. */
 export function TranslateFromUrl() {
   const params = useSearchParams();
-  return <TranslateView slug={params.get("sloka") ?? DEFAULT_SLUG} langCode={params.get("lang") ?? DEFAULT_LANG} />;
+  const reading = useReadingLanguage();
+  return <TranslateView slug={params.get("sloka") ?? DEFAULT_SLUG} langCode={params.get("lang") ?? (reading === "en" ? DEFAULT_LANG : reading)} />;
 }
 
 export function TranslateView({ slug: initialSlug = DEFAULT_SLUG, langCode = DEFAULT_LANG }: { slug?: string; langCode?: string }) {

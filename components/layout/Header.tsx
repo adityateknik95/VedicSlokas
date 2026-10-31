@@ -1,24 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Diya } from "@/components/motifs";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { AccountLink } from "@/components/auth/AccountLink";
 import { AuthSync } from "@/components/auth/AuthSync";
 import { smoothScroller } from "@/components/motion/smooth-scroller";
+import { useFavouritesHref } from "./FavouritesLink";
 
-/**
- * The public header says what VedicSlokas is, not what buttons it has: each link opens a part
- * of the story on the landing page. The tools (library, favourites, translate, surprise)
- * live in the signed-in dashboard; guests still reach the library from the hero and footer.
- */
+const FAVOURITES = "favourites";
+
+/** The product, one tap from any page. The landing page's story is below its hero, and in the footer. */
 const NAV: { href: string; label: string }[] = [
-  { href: "/#what-it-is", label: "What it is" },
-  { href: "/#how-it-works", label: "How it works" },
-  { href: "/#texts", label: "The texts" },
-  { href: "/#your-space", label: "Your space" },
+  { href: "/library", label: "Library" },
+  { href: "/translate", label: "Translate" },
+  { href: FAVOURITES, label: "Favourites" },
   { href: "/about", label: "About" },
 ];
 
@@ -70,26 +68,37 @@ function settleOnSection(href: string) {
   frame = requestAnimationFrame(step);
 }
 
-/** On the landing page, section links scroll in place (and stay put); elsewhere they navigate as usual. */
-const onSectionClick = (pathname: string, href: string) => () => {
-  if (pathname === "/" && href.startsWith("/#")) requestAnimationFrame(() => settleOnSection(href));
-};
+/** The library's favourites view is a URL filter: read it apart, so the nav stays in the static HTML. */
+function FavouritesViewWatcher({ onChange }: { onChange: (on: boolean) => void }) {
+  const on = useSearchParams().get("favorites") === "1";
+  useEffect(() => onChange(on), [on, onChange]);
+  return null;
+}
+
+type NavState = { href: (item: string) => string; current: (item: string) => boolean };
+
+function useNavState(pathname: string, favView: boolean): NavState {
+  const favHref = useFavouritesHref();
+  return {
+    href: (item) => (item === FAVOURITES ? favHref : item),
+    current: (item) => (item === FAVOURITES ? favView || pathname === "/dashboard/favourites" : item === pathname && !(favView && item === "/library")),
+  };
+}
 
 /** The shared frosted-gold pill used by both the nav and the action group. */
 const PILL =
   "rounded-full border border-gold/30 bg-bg-2/70 p-1 shadow-[inset_0_1px_0_rgb(243_231_207/0.06),0_12px_40px_-18px_var(--glow)] backdrop-blur-md";
 
-function DesktopNav({ pathname }: { pathname: string }) {
+function DesktopNav({ nav }: { nav: NavState }) {
   return (
     <ul className={`flex items-center gap-0.5 ${PILL}`}>
       {NAV.map((item) => {
-        const on = item.href === pathname;
+        const on = nav.current(item.href);
         return (
           <li key={item.href}>
             <Link
-              href={item.href}
+              href={nav.href(item.href)}
               aria-current={on ? "page" : undefined}
-              onClick={onSectionClick(pathname, item.href)}
               className={`relative flex h-10 items-center whitespace-nowrap rounded-full px-4 text-sm font-medium transition-colors duration-300 ${
                 on
                   ? "bg-gradient-to-b from-saffron/25 to-gold/10 text-accent shadow-[inset_0_0_0_1px_rgb(201_162_75/0.45),0_0_22px_-6px_var(--glow)]"
@@ -157,7 +166,7 @@ function MenuButton({ menu }: { menu: Menu }) {
   );
 }
 
-function MenuPanel({ menu, pathname }: { menu: Menu; pathname: string }) {
+function MenuPanel({ menu, nav }: { menu: Menu; nav: NavState }) {
   return (
     <div
       ref={menu.panel}
@@ -170,12 +179,9 @@ function MenuPanel({ menu, pathname }: { menu: Menu; pathname: string }) {
           {NAV.map((item) => (
             <li key={item.href}>
               <Link
-                href={item.href}
-                aria-current={item.href === pathname ? "page" : undefined}
-                onClick={() => {
-                  menu.setOpen(false);
-                  onSectionClick(pathname, item.href)();
-                }}
+                href={nav.href(item.href)}
+                aria-current={nav.current(item.href) ? "page" : undefined}
+                onClick={() => menu.setOpen(false)}
                 className="flex min-h-12 items-center rounded-xl px-4 text-base text-ink hover:bg-surface-2 aria-[current=page]:text-accent"
               >
                 {item.label}
@@ -192,19 +198,30 @@ export function Header() {
   const pathname = usePathname();
   const menu = useCompactMenu();
   const [scrolled, setScrolled] = useState(false);
+  const [favView, setFavView] = useState(false);
+  const nav = useNavState(pathname, favView);
 
-  // Arriving at "/#section", by a fresh load or from another page: settle on that section.
+  // Arriving at "/#section" from a fresh load or another page, or following a section link
+  // (the footer's) on the landing page: settle on that section.
   useEffect(() => {
-    if (pathname !== "/" || !window.location.hash) return;
+    if (pathname !== "/") return;
     const hash = window.location.hash;
     const go = () => settleOnSection(hash);
-    if (document.readyState === "complete") go();
-    else window.addEventListener("load", go, { once: true });
+    if (hash) {
+      if (document.readyState === "complete") go();
+      else window.addEventListener("load", go, { once: true });
+    }
     const onHash = () => settleOnSection(window.location.hash);
+    const onClick = (e: MouseEvent) => {
+      const href = (e.target as Element).closest?.('a[href^="/#"]')?.getAttribute("href");
+      if (href) requestAnimationFrame(() => settleOnSection(href));
+    };
     window.addEventListener("hashchange", onHash);
+    document.addEventListener("click", onClick);
     return () => {
       window.removeEventListener("load", go);
       window.removeEventListener("hashchange", onHash);
+      document.removeEventListener("click", onClick);
       stopSettling?.();
     };
   }, [pathname]);
@@ -234,7 +251,7 @@ export function Header() {
         </Link>
 
         <nav aria-label="Primary" className="hidden xl:block">
-          <DesktopNav pathname={pathname} />
+          <DesktopNav nav={nav} />
         </nav>
 
         <div className={`flex items-center gap-0.5 justify-self-end ${PILL}`}>
@@ -245,7 +262,10 @@ export function Header() {
           <MenuButton menu={menu} />
         </div>
       </div>
-      <MenuPanel menu={menu} pathname={pathname} />
+      <MenuPanel menu={menu} nav={nav} />
+      <Suspense fallback={null}>
+        <FavouritesViewWatcher onChange={setFavView} />
+      </Suspense>
       {/* Gold hairline that appears once the page scrolls under the bar. */}
       <div
         aria-hidden="true"

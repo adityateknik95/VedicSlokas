@@ -4,7 +4,7 @@ import type { FieldErrors } from "./auth-schemas";
 
 export type RequestLinkState =
   | { status: "idle" }
-  | { status: "invalid"; fieldErrors: FieldErrors; values: { name?: string; email?: string } }
+  | { status: "invalid"; fieldErrors: FieldErrors; values: { email?: string } }
   | { status: "rate_limited"; retryAt: number }
   | { status: "error"; message: string }
   | { status: "sent" };

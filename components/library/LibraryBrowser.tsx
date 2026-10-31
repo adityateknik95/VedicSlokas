@@ -63,7 +63,7 @@ export function LibraryBrowser({ account }: Props = {}) {
   const viewed = useMemo(() => new Set(account?.viewed), [account]);
   const learned = useMemo(() => new Set(account?.learned), [account]);
   const badgeFor = (slug: string): CardBadge | undefined => (!account ? undefined : learned.has(slug) ? "learned" : viewed.has(slug) ? undefined : "new");
-  const favLabel = account ? "Favourites" : "Favorites";
+  const favLabel = "Favourites";
   const chipSize = account ? "min-h-11" : "";
 
   return (
@@ -123,25 +123,18 @@ export function LibraryBrowser({ account }: Props = {}) {
           </div>
         </fieldset>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label htmlFor="deity-filter" className="eyebrow mb-3 block">
-              Deity
-            </label>
-            <select
-              id="deity-filter"
-              value={deity}
-              onChange={(e) => setParam({ deity: e.target.value || null })}
-              className="h-11 min-w-48 rounded-full border border-line bg-bg-2 px-4 text-sm text-ink focus:border-gold"
-            >
-              <option value="">All deities</option>
-              {deities.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+        <fieldset className="min-w-0">
+          <legend className="eyebrow mb-3">Deity</legend>
+          <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+            {deities.map((d) => (
+              <button key={d} type="button" aria-pressed={deity === d} onClick={() => setParam({ deity: deity === d ? null : d })} className={`${chip} ${chipIdle} ${chipSize}`}>
+                {d}
+              </button>
+            ))}
           </div>
+        </fieldset>
+
+        <div className="flex flex-wrap items-end gap-3">
           <button type="button" aria-pressed={favOnly} onClick={() => setParam({ favorites: favOnly ? null : "1" })} className={`${chip} ${chipIdle} min-h-11`}>
             <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" fill={favOnly ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
               <path d="M12 3c2.6 2.8 3.6 6.2 0 11-3.6-4.8-2.6-8.2 0-11Z" />
@@ -188,7 +181,7 @@ export function LibraryBrowser({ account }: Props = {}) {
             {favOnly && !favorites.length
               ? account
                 ? "Tap the lotus on any sloka to keep it here. Your favourites follow you to every device."
-                : "Tap the lotus on any sloka to keep it here. Favorites stay on this device."
+                : "Tap the lotus on any sloka to keep it here. Favourites stay on this device until you create a free account."
               : "Try a simpler word, an English meaning, or clear a filter."}
           </p>
         </div>

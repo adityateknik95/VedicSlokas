@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
+import { nudgeAfterGuestSave } from "@/lib/account-nudge";
 import { failureMessage, hasSessionHint, meFetch } from "@/lib/dashboard/client";
 import { toast } from "@/lib/toast";
 
@@ -178,6 +179,7 @@ export function setFavourite(slug: string, saved: boolean): void {
     const list = readLocal().filter((s) => s !== slug);
     writeLocal(saved ? [...list, slug] : list);
     set(localSnapshot());
+    if (saved) nudgeAfterGuestSave(list.length + 1);
     return;
   }
 

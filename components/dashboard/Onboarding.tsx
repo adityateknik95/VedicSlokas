@@ -9,6 +9,9 @@ import { toast } from "@/lib/toast";
 import { transliterate } from "@/lib/transliterate";
 import type { Theme } from "@/lib/types";
 import { openSurprise } from "./surprise-events";
+import { readFirstRun } from "@/lib/first-run";
+import { prefsForLanguage } from "@/lib/language-prefs";
+import { deviceLanguage } from "@/lib/reading-language";
 
 type ThemeChoice = { key: Theme; label: string; devanagari: string; blurb: string };
 
@@ -47,6 +50,8 @@ export function Onboarding({
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [name, setName] = useState("");
+  const askName = firstName === "friend";
   const [goal, setGoal] = useState<Goal | null>(null);
   const [interests, setInterests] = useState<Theme[]>(initialInterests);
   const [script, setScript] = useState<ReadingScript>("devanagari");
@@ -56,6 +61,15 @@ export function Onboarding({
   const [saving, setSaving] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const shownStep = useRef(step);
+
+  // Start from what this visitor already picked as a guest on the public site.
+  useEffect(() => {
+    const prefs = prefsForLanguage(deviceLanguage());
+    setScript(prefs.script);
+    setMeaningLang(prefs.meaningLang);
+    const { theme } = readFirstRun();
+    if (theme) setInterests((list) => (list.includes(theme) ? list : [...list, theme]));
+  }, []);
 
   // Move focus to the new step's heading, but not on first load (and not twice in dev).
   useEffect(() => {
@@ -69,6 +83,7 @@ export function Onboarding({
   const save = async (): Promise<boolean> => {
     setSaving(true);
     try {
+      if (name.trim()) await meFetch("/api/me/profile", { method: "PATCH", body: { name: name.trim() } });
       await meFetch("/api/me/prefs", {
         method: "PATCH",
         body: { interests, goal, script, meaningLang, dailyEmail, reminderHour: dailyEmail ? hour : null, timezone: browserTimeZone(), onboarded: true },
@@ -109,6 +124,14 @@ export function Onboarding({
               Namaste, {firstName}. What brings you here?
             </h1>
             <p className="mt-3 text-ink-muted">We will shape your dashboard around it. You can change everything later in Settings.</p>
+            {askName && (
+              <div className="mt-7">
+                <label htmlFor="welcome-name" className="eyebrow mb-3 block">
+                  What should we call you? (optional)
+                </label>
+                <input id="welcome-name" type="text" autoComplete="given-name" maxLength={80} value={name} onChange={(e) => setName(e.target.value)} className="field" />
+              </div>
+            )}
             <fieldset className="mt-7">
               <legend className="eyebrow mb-3">Your goal</legend>
               <div className="grid gap-3 sm:grid-cols-3">

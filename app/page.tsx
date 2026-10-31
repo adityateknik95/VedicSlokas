@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Descent } from "@/components/landing/Descent";
 import { Elements } from "@/components/landing/Elements";
 import { FinalCta } from "@/components/landing/FinalCta";
+import { FirstRunCard } from "@/components/landing/FirstRunCard";
 import { Hero } from "@/components/landing/Hero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Streams } from "@/components/landing/Streams";
@@ -64,6 +65,7 @@ export default function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\u003c") }} />
       <Hero />
+      <FirstRunCard />
       <Descent />
       <Elements />
       <WhatItIs />

@@ -33,8 +33,8 @@ test("a favourite saved to the account survives a reload", async ({ page }) => {
   await signUpAndIn(page, "Kiran");
   await skipOnboarding(page);
   await page.goto("/sloka/gayatri-mantra");
-  await page.getByRole("button", { name: /^Save .* to favorites$/ }).first().click();
-  await expect(page.getByRole("button", { name: /^Remove .* from favorites$/ }).first()).toBeVisible();
+  await page.getByRole("button", { name: /^Save .* to favourites$/ }).first().click();
+  await expect(page.getByRole("button", { name: /^Remove .* from favourites$/ }).first()).toBeVisible();
   await expect.poll(async () => (await api<{ favourites: Fav[] }>(page, "/api/me/favourites")).body.favourites.map((f) => f.slug)).toEqual(["gayatri-mantra"]);
   await page.goto("/dashboard/favourites");
   await page.reload();

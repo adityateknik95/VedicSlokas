@@ -17,7 +17,7 @@ const tones = {
   quiet: "border border-line bg-bg/30 text-ink backdrop-blur-sm hover:-translate-y-0.5 hover:border-gold hover:bg-surface-2",
 };
 
-/** A call to action that reads "Begin" for guests and "Go to your dashboard" for members. */
+/** A call to action with one target for guests and another ("Go to your dashboard") for members. */
 export function AuthAwareCta({ guest, member, tone = "primary", className = "" }: Props) {
   const signedIn = useSignedInHint();
   const target = signedIn ? member : guest;

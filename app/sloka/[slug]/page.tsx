@@ -7,10 +7,13 @@ import { FavoriteButton } from "@/components/ui/FavoriteButton";
 import { AudioButton } from "@/components/sloka/AudioButton";
 import { ShareActions } from "@/components/sloka/ShareActions";
 import { SlokaAccount } from "@/components/sloka/SlokaAccount";
+import { LanguageToggle, SlokaMeaning, SlokaVerse, type SlokaVersions } from "@/components/sloka/SlokaLanguage";
 import { SlokaPersonal } from "@/components/sloka/SlokaPersonal";
 import { StoryCard } from "@/components/sloka/StoryCard";
 import { SlokaCard } from "@/components/library/SlokaCard";
-import { getRelated, getSloka, slokas } from "@/lib/slokas";
+import { LANGUAGES, meaningIn, slokaInScript } from "@/lib/languages";
+import { hasRecitation } from "@/lib/recitation";
+import { getRelated, getSloka, getTextNeighbours, slokas } from "@/lib/slokas";
 import { site } from "@/lib/site";
 
 export const dynamicParams = false;
@@ -38,9 +41,15 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
   const s = getSloka(slug);
   if (!s) notFound();
 
-  const idx = slokas.findIndex((x) => x.slug === s.slug);
-  const prev = slokas[(idx - 1 + slokas.length) % slokas.length];
-  const next = slokas[(idx + 1) % slokas.length];
+  const { prev, next } = getTextNeighbours(s);
+  // English and Hindi readers see the Devanagari; the rest see the verse in their own script.
+  const versions = Object.fromEntries(
+    LANGUAGES.map((l) => {
+      const deva = l.script === "iast" || l.script === "devanagari";
+      const meaning = meaningIn(s, l);
+      return [l.code, { verse: deva ? s.devanagari : slokaInScript(s, l), verseLang: deva ? "sa" : l.scriptLang, meaning: meaning.text, meaningLang: l.htmlLang, verified: meaning.verified }];
+    }),
+  ) as SlokaVersions;
   const related = getRelated(s);
   const copyText = `${s.devanagari}\n\n${s.iast}\n\n“${s.translation}”\n— ${s.reference.citation}`;
 
@@ -95,17 +104,15 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
             <h1 className="display mt-4 text-[2.6rem] text-ink sm:text-6xl md:text-7xl">{s.title}</h1>
           </div>
 
-          <div className="relative mx-auto mt-12 max-w-4xl">
+          <div className="mt-8">
+            <LanguageToggle />
+          </div>
+
+          <div className="relative mx-auto mt-10 max-w-4xl">
             <PillarBorder className="absolute -left-2 top-0 hidden h-full w-7 text-gold opacity-90 [filter:drop-shadow(0_0_6px_rgb(232_137_28/0.5))] md:block" />
             <PillarBorder className="absolute -right-2 top-0 hidden h-full w-7 text-gold opacity-90 [filter:drop-shadow(0_0_6px_rgb(232_137_28/0.5))] md:block" />
             <div className="px-0 py-4 text-center md:px-14">
-              <p className="deva text-[1.85rem] leading-[1.9] text-ink [overflow-wrap:anywhere] sm:text-5xl sm:leading-[1.85]" lang="sa">
-                {s.devanagari.split("\n").map((l, i) => (
-                  <span key={i} className="block">
-                    {l}
-                  </span>
-                ))}
-              </p>
+              <SlokaVerse versions={versions} />
               <Lotus className="mx-auto my-8 h-7 w-14 text-gold" />
               <p className="iast text-xl leading-relaxed text-accent sm:text-2xl" lang="sa-Latn">
                 {s.iast.split("\n").map((l, i) => (
@@ -118,21 +125,13 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
           </div>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-3">
-            <AudioButton src={s.audio} title={s.title} />
+            {hasRecitation(s.audio) && <AudioButton src={s.audio} title={s.title} />}
             <FavoriteButton slug={s.slug} title={s.title} />
             <ShareActions title={s.title} text={copyText} path={`/sloka/${s.slug}`} />
             {/* Signed-in readers only, after hydration: records the view; Mark as learned; Save to collection. */}
             <SlokaAccount slug={s.slug} title={s.title} />
           </div>
-          <p className="mt-6 text-center">
-            <Link
-              href={`/translate?sloka=${s.slug}&lang=kn`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-accent underline-offset-4 hover:underline"
-            >
-              Read it in ಕನ್ನಡ · हिन्दी · தமிழ் · తెలుగు · മലയാളം <span aria-hidden="true">→</span>
-            </Link>
-          </p>
-          {/* Signed-in readers only: the verse in their script and language, and their private note. */}
+          {/* Signed-in readers only: their private note. */}
           <SlokaPersonal slug={s.slug} />
         </Container>
       </header>
@@ -144,11 +143,11 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
             <Eyebrow>Translation</Eyebrow>
           </div>
           <h2 id="translation-title" className="sr-only">
-            English translation
+            Meaning
           </h2>
-          <p data-reveal style={{ ["--i" as string]: 1 }} className="display mt-6 text-3xl leading-snug text-ink sm:text-5xl">
-            “{s.translation}”
-          </p>
+          <div data-reveal style={{ ["--i" as string]: 1 }}>
+            <SlokaMeaning versions={versions} />
+          </div>
           <div data-reveal style={{ ["--i" as string]: 2 }} className="mt-8 flex flex-wrap justify-center gap-2">
             {s.themes.map((t) => (
               <Link key={t} href={`/library?theme=${t}`} className="rounded-full">
@@ -261,16 +260,24 @@ export default async function SlokaPage({ params }: PageProps<"/sloka/[slug]">) 
             ))}
           </ul>
 
-          <nav aria-label="Previous and next sloka" className="mt-14 grid gap-3 sm:grid-cols-2">
-            <Link href={`/sloka/${prev.slug}`} className="group rounded-2xl border border-line p-5 transition-colors hover:border-gold">
-              <span className="text-xs uppercase tracking-[0.2em] text-ink-muted">← Previous</span>
-              <span className="display mt-1 block text-2xl text-ink group-hover:text-accent">{prev.title}</span>
-            </Link>
-            <Link href={`/sloka/${next.slug}`} className="group rounded-2xl border border-line p-5 text-right transition-colors hover:border-gold">
-              <span className="text-xs uppercase tracking-[0.2em] text-ink-muted">Next →</span>
-              <span className="display mt-1 block text-2xl text-ink group-hover:text-accent">{next.title}</span>
-            </Link>
-          </nav>
+          {(prev || next) && (
+            <nav aria-label={`More from ${s.reference.text}`} className="mt-14 grid gap-3 sm:grid-cols-2">
+              {prev && (
+                <Link href={`/sloka/${prev.slug}`} className="group rounded-2xl border border-line p-5 transition-colors hover:border-gold">
+                  <span className="text-xs uppercase tracking-[0.2em] text-ink-muted">← Earlier in {s.reference.text}</span>
+                  <span className="display mt-1 block text-2xl text-ink group-hover:text-accent">{prev.title}</span>
+                  <span className="mt-1 block text-xs text-ink-muted">{prev.reference.citation}</span>
+                </Link>
+              )}
+              {next && (
+                <Link href={`/sloka/${next.slug}`} className="group rounded-2xl border border-line p-5 text-right transition-colors hover:border-gold sm:col-start-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-ink-muted">Later in {s.reference.text} →</span>
+                  <span className="display mt-1 block text-2xl text-ink group-hover:text-accent">{next.title}</span>
+                  <span className="mt-1 block text-xs text-ink-muted">{next.reference.citation}</span>
+                </Link>
+              )}
+            </nav>
+          )}
         </Container>
       </section>
     </article>

@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <DashFrame
-      user={{ name: user.name, email: user.email, image: user.image ?? null, plan: canUseSubscriptions(user), admin: hasRole(user, ["admin"]), teach: hasRole(user, ["teacher", "admin"]) }}
+      user={{ name: user.name || user.email.split("@")[0], email: user.email, image: user.image ?? null, plan: canUseSubscriptions(user), admin: hasRole(user, ["admin"]), teach: hasRole(user, ["teacher", "admin"]) }}
       notices={notices}
       serverNow={now}
       initiallyCollapsed={jar.get(SIDEBAR_COOKIE)?.value === "collapsed"}

@@ -22,8 +22,8 @@ export function FavoriteButton({ slug, title, size = "md", className = "" }: Pro
       onAnimationEnd={() => setPop(false)}
       data-fav-pop={pop ? "true" : undefined}
       aria-pressed={on}
-      aria-label={on ? `Remove ${title} from favorites` : `Save ${title} to favorites`}
-      title={on ? "Saved to favorites" : "Save to favorites"}
+      aria-label={on ? `Remove ${title} from favourites` : `Save ${title} to favourites`}
+      title={on ? "Saved to favourites" : "Save to favourites"}
       className={`grid ${dim} shrink-0 place-items-center rounded-full border transition-all duration-300 ${
         on ? "border-saffron bg-saffron/15 text-flame" : "border-line text-ink-muted hover:border-gold hover:text-accent"
       } ${className}`}

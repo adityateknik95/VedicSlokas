@@ -33,9 +33,7 @@ export async function signUpAndIn(page: Page, name: string, email = uniqueEmail(
   // on Vercel the platform sets it.
   await page.context().setExtraHTTPHeaders({ "x-forwarded-for": `10.${rand()}.${rand()}.${rand()}` });
   await page.goto("/signup");
-  await page.getByLabel("Your name").fill(name);
   await page.getByLabel("Email address").fill(email);
-  await page.getByRole("checkbox", { name: /I agree/ }).check();
   await page.getByRole("button", { name: "Email me a sign in link" }).click();
   await expect(page).toHaveURL(/\/check-email/);
   const { text } = await emailTo(email);
@@ -44,6 +42,9 @@ export async function signUpAndIn(page: Page, name: string, email = uniqueEmail(
   await page.goto(link);
   await page.getByRole("button", { name: /sign in|continue|confirm/i }).first().click();
   await expect(page).toHaveURL(/\/dashboard/);
+  // Sign up asks only for the address; tests give the student their name afterwards.
+  await api(page, "/api/me/profile", { method: "PATCH", body: { name } });
+  await page.reload();
   return email;
 }
 

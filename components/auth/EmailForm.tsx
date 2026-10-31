@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { requestLoginLink, requestSignupLink } from "@/app/(auth)/actions";
 import { fieldErrorsOf, loginSchema, signupSchema, type FieldErrors } from "@/lib/auth-schemas";
@@ -13,7 +12,7 @@ import { formatWait, useCountdown } from "./useCountdown";
 
 type Props = { mode: "login" | "signup"; callbackUrl: string; turnstileSiteKey?: string };
 type Field = keyof FieldErrors;
-const ORDER: Field[] = ["name", "email", "consent"];
+const ORDER: Field[] = ["email"];
 
 export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
   const action = mode === "login" ? requestLoginLink : requestSignupLink;
@@ -21,8 +20,6 @@ export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [email, setEmail] = useState(state.status === "invalid" ? (state.values.email ?? "") : "");
-  const [name, setName] = useState(state.status === "invalid" ? (state.values.name ?? "") : "");
-  const [consent, setConsent] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -30,9 +27,8 @@ export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
   const wait = useCountdown(retryAt);
   const suggestion = email.includes("@") ? suggestEmail(email.trim()) : null;
 
-  const validate = (values: { name: string; email: string; consent: boolean }): FieldErrors => {
-    const input = { name: values.name, email: values.email, consent: values.consent ? "on" : undefined };
-    const result = mode === "login" ? loginSchema.safeParse(input) : signupSchema.safeParse(input);
+  const validate = (values: { email: string }): FieldErrors => {
+    const result = mode === "login" ? loginSchema.safeParse(values) : signupSchema.safeParse(values);
     return result.success ? {} : fieldErrorsOf(result.error);
   };
 
@@ -53,18 +49,18 @@ export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
   }, [state]);
 
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    const errs = validate({ name, email, consent });
+    const errs = validate({ email });
     if (Object.keys(errs).length) {
       e.preventDefault();
       setErrors(errs);
-      setTouched({ name: true, email: true, consent: true });
+      setTouched({ email: true });
       focusFirstError(errs);
     }
   };
 
-  const recheck = (field: Field, next: { name?: string; email?: string; consent?: boolean }) => {
+  const recheck = (field: Field, next: { email?: string }) => {
     if (!touched[field] && !errors[field]) return;
-    const errs = validate({ name, email, consent, ...next });
+    const errs = validate({ email, ...next });
     setErrors((prev) => ({ ...prev, [field]: errs[field] }));
   };
 
@@ -79,40 +75,6 @@ export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
       <p className="sr-only" aria-live="assertive" aria-atomic="true">
         {announcement}
       </p>
-
-      {mode === "signup" && (
-        <div>
-          <label htmlFor="name" className="mb-2 block text-sm font-semibold text-ink">
-            Your name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            autoCapitalize="words"
-            enterKeyHint="next"
-            required
-            maxLength={80}
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              recheck("name", { name: e.target.value });
-            }}
-            onBlur={() => {
-              setTouched((t) => ({ ...t, name: true }));
-              setErrors((prev) => ({ ...prev, name: validate({ name, email, consent }).name }));
-            }}
-            className="field"
-            {...fieldProps("name")}
-          />
-          {errors.name && (
-            <p id="name-error" className="field-error mt-2 text-sm">
-              {errors.name}
-            </p>
-          )}
-        </div>
-      )}
 
       <div>
         <label htmlFor="email" className="mb-2 block text-sm font-semibold text-ink">
@@ -137,7 +99,7 @@ export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
           }}
           onBlur={() => {
             setTouched((t) => ({ ...t, email: true }));
-            if (email) setErrors((prev) => ({ ...prev, email: validate({ name, email, consent }).email }));
+            if (email) setErrors((prev) => ({ ...prev, email: validate({ email }).email }));
           }}
           className="field"
           {...fieldProps("email")}
@@ -164,42 +126,6 @@ export function EmailForm({ mode, callbackUrl, turnstileSiteKey }: Props) {
           </p>
         )}
       </div>
-
-      {mode === "signup" && (
-        <div>
-          <div className="flex min-h-11 items-start gap-3 py-1">
-            <input
-              id="consent"
-              name="consent"
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => {
-                setConsent(e.target.checked);
-                setTouched((t) => ({ ...t, consent: true }));
-                setErrors((prev) => ({ ...prev, consent: e.target.checked ? undefined : prev.consent }));
-              }}
-              className="mt-0.5 h-6 w-6 shrink-0 cursor-pointer accent-[var(--saffron)]"
-              {...fieldProps("consent")}
-            />
-            <label htmlFor="consent" className="text-sm leading-relaxed text-ink-muted">
-              I agree to the{" "}
-              <Link href="/terms" target="_blank" className="font-semibold text-accent underline underline-offset-4">
-                Terms
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" target="_blank" className="font-semibold text-accent underline underline-offset-4">
-                Privacy Policy
-              </Link>
-              .
-            </label>
-          </div>
-          {errors.consent && (
-            <p id="consent-error" className="field-error mt-2 text-sm">
-              {errors.consent}
-            </p>
-          )}
-        </div>
-      )}
 
       <Turnstile siteKey={turnstileSiteKey} />
 

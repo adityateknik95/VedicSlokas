@@ -17,7 +17,7 @@ const PAGES = `vs-pages-${VERSION}`;
 const SAVED = `vs-saved-${VERSION}`;
 const OFFLINE_URL = "/offline";
 
-const PUBLIC_PAGE = /^\/($|library$|sloka\/[a-z0-9-]+$|about$|privacy$|terms$|translate$|offline$)/;
+const PUBLIC_PAGE = /^\/($|library$|sloka\/[a-z0-9-]+$|about$|pilgrimage$|privacy$|terms$|translate$|offline$)/;
 const NEVER = /^\/(api|dashboard|admin|login|signup|auth|check-email|unsubscribe|monitoring)(\/|$)/;
 const STATIC_FILE = /^\/(_next\/static\/|fonts\/|icons\/)/;
 

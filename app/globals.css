@@ -545,6 +545,14 @@ html.lenis body {
 }
 /* The hero's bottom edge eases into --color-cosmos-0, the exact colour the descent's
    heading band starts on (both use the token), so there is no seam at any scroll position. */
+/* Continues the colour the hero fades into, so the first-run card sits in no visible band. */
+.first-run-band {
+  background: var(--color-cosmos-0);
+}
+[data-theme="parchment"] .first-run-band {
+  background: transparent;
+}
+
 .hero-fade {
   height: 8%;
   pointer-events: none;
